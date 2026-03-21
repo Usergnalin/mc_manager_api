@@ -1,0 +1,174 @@
+const { get_nested_value, get_path } = require("../utils")
+const { validate: validate_uuid } = require("uuid")
+const { SERVER_STATUS, COMMAND_STATUS } = require("../configs/constants")
+
+// === Request handlers ===
+
+const validation_logic = {
+    username: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 63) ? trimmed : null
+    },
+    password: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 63) ? trimmed : null
+    },
+    team_name: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+    },
+    team_id: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (validate_uuid(trimmed)) ? trimmed : null
+    },
+    agent_name: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+    },
+    agent_id: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (validate_uuid(trimmed)) ? trimmed : null
+    },
+    command: (value) => {
+        if (typeof value === "string") {
+            try {
+                payload = JSON.parse(value)
+            } catch (error) {
+                return null
+            }
+        } else if (typeof value === "object") {
+            payload = value
+        } else {
+            return null
+        }
+        return (typeof payload !== "object" || payload === null) ? null : payload
+    },
+    linking_code: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim().toLowerCase()
+        if (trimmed.length === 0) return null
+        const parts = trimmed.split("-")
+        if (parts.length !== 4) return null
+        if (parts.some(part => part.length === 0)) return null
+        return trimmed
+    },
+    public_key: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+    },
+    server_name: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+    },
+    properties: (value) => {
+        if (typeof value === "string") {
+            try {
+                payload = JSON.parse(value)
+            } catch (error) {
+                return null
+            }
+        } else if (typeof value === "object") {
+            payload = value
+        } else {
+            return null
+        }
+        return (typeof payload !== "object" || payload === null) ? null : payload
+    },
+    server_id: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (validate_uuid(trimmed)) ? trimmed : null
+    },
+    command_id: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return (validate_uuid(trimmed)) ? trimmed : null
+    },
+    status: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim().toLowerCase()
+        if (!SERVER_STATUS.includes(trimmed)) return null
+        return trimmed
+    },
+    command_status: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim().toLowerCase()
+        if (!COMMAND_STATUS.includes(trimmed)) return null
+        return trimmed
+    }
+}
+
+module.exports.load_body_data = ({fields, data_path} = {}) => {
+    return (req, res, next) => {
+        if (req.body === undefined) {
+            return res.status(422).json({ message: "Missing body" })
+        }
+        res.locals[data_path] = res.locals[data_path] || {}
+        for (const field of fields) {
+            const raw_value = req.body[field]
+            if (raw_value === undefined) {
+                return res.status(422).json({ message: `Missing ${field}` })
+            }
+            if (!validation_logic[field]) {
+                console.error(`No validation logic for field "${field}"`)
+                return res.status(500).json({ message: "Internal server error" })
+            }
+            const validated_value = validation_logic[field](raw_value)
+            if (validated_value === null) {
+                console.log(field)
+                return res.status(400).json({ message: `Invalid ${field}` })
+            }
+            res.locals[data_path][field] = validated_value
+        }
+        next()
+    }
+}
+
+module.exports.load_param_data = ({field, data_path} = {}) => {
+    return (req, res, next) => {
+        if (req.params === undefined) {
+            return res.status(422).json({ message: "Missing params" })
+        }
+        const raw_value = req.params[field]
+        if (raw_value === undefined) {
+            return res.status(422).json({ message: `Missing param: ${field}` })
+        }
+        if (!validation_logic[field]) {
+            console.error(`No validation logic for param "${field}"`)
+            return res.status(500).json({ message: "Internal server error" })
+        }
+        const validated_value = validation_logic[field](raw_value)
+        if (validated_value === null) {
+            return res.status(400).json({ message: `Invalid ${field}` })
+        }
+        res.locals[data_path] = validated_value
+        next()
+    }
+}
+
+// === Response handlers ===
+
+module.exports.send_data = ({data_path, status_code = 200} = {}) => {
+    return (req, res, next) => {
+        const data = get_path(res, data_path)
+        if (data === undefined) {
+            console.error("No data found at path(s)", data_path)
+            return res.status(500).json({ message: "Internal server error" })
+        }
+        res.status(status_code).json(data)
+    }
+}
+
+module.exports.send_empty = () => {
+    return (req, res, next) => {
+        res.status(204).send()
+    }
+}

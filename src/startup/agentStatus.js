@@ -1,0 +1,16 @@
+const { redis_client_presence } = require('../services/redis')
+const agent_model = require('../models/agentModel')
+
+module.exports = (callback) => {
+    redis_client_presence.flushDb().then(() => {
+        agent_model.update_all({ agent_status: 'offline' }, ['agent_status'], (error, results) => {
+            if (error) {
+                console.error("Error agent_model update_all:", error)
+            }
+            callback(error, results)
+        })
+    }).catch((redis_error) => {
+        console.error("Redis Error:", redis_error)
+        callback(redis_error, null)
+    })
+}
