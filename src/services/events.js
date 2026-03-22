@@ -1,11 +1,8 @@
-const EventEmitter = require('events')
+import { EventEmitter } from "node:events"
 class EventService extends EventEmitter {}
 
-const db_events = new EventService()
+export const db_events = new EventService()
 db_events.setMaxListeners(0)
 
-const redis_events = new EventService()
+export const redis_events = new EventService()
 redis_events.setMaxListeners(0)
-
-module.exports.db_events = db_events
-module.exports.redis_events = redis_events

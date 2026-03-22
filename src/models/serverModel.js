@@ -1,13 +1,16 @@
-const pool = require("../services/db")
-const { db_events } = require("../services/events")
+import pool from "../services/db.js"
+import { db_events } from "../services/events.js"
 
-module.exports.insert_single = (data, callback) => {
+export const insert_single = (data, callback) => {
     const statement = `
     INSERT INTO Server (server_id, agent_id, server_name, properties)
     VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)
     `
     const values = [
-        data.server_id, data.agent_id, data.server_name, JSON.stringify(data.properties)
+        data.server_id,
+        data.agent_id,
+        data.server_name,
+        JSON.stringify(data.properties),
     ]
     pool.query(statement, values, (error, results) => {
         if (error) {
@@ -20,7 +23,7 @@ module.exports.insert_single = (data, callback) => {
     })
 }
 
-module.exports.check_access_by_agent_id = (data, callback) => {
+export const check_access_by_agent_id = (data, callback) => {
     const statement = `
         SELECT EXISTS (
             SELECT 1
@@ -33,7 +36,7 @@ module.exports.check_access_by_agent_id = (data, callback) => {
     pool.query(statement, values, callback)
 }
 
-module.exports.check_access_by_user_id = (data, callback) => {
+export const check_access_by_user_id = (data, callback) => {
     const statement = `
     SELECT EXISTS (
         SELECT 1
@@ -48,12 +51,12 @@ module.exports.check_access_by_user_id = (data, callback) => {
     pool.query(statement, values, callback)
 }
 
-module.exports.update_by_id = (data, columns, callback) => {
+export const update_by_id = (data, columns, callback) => {
     const fields = []
     const values = []
-    columns.forEach(column => {
+    columns.forEach((column) => {
         if (data[column] !== undefined) {
-            if (column === 'properties') {
+            if (column === "properties") {
                 data[column] = JSON.stringify(data[column])
             }
             fields.push(`${column} = ?`)
@@ -62,19 +65,19 @@ module.exports.update_by_id = (data, columns, callback) => {
     })
     const statement = `
         UPDATE Server
-        SET ${fields.join(', ')}
+        SET ${fields.join(", ")}
         WHERE server_id = UUID_TO_BIN(?)
     `
     values.push(data.server_id)
     pool.query(statement, values, callback)
 }
 
-module.exports.update_by_server_id = (data, columns, callback) => {
+export const update_by_server_id = (data, columns, callback) => {
     const fields = []
     const values = []
-    columns.forEach(column => {
+    columns.forEach((column) => {
         if (data[column] !== undefined) {
-            if (column === 'properties') {
+            if (column === "properties") {
                 data[column] = JSON.stringify(data[column])
             }
             fields.push(`${column} = ?`)
@@ -90,7 +93,7 @@ module.exports.update_by_server_id = (data, columns, callback) => {
         FOR UPDATE;
 
         UPDATE Server 
-        SET ${fields.join(', ')} 
+        SET ${fields.join(", ")} 
         WHERE server_id = UUID_TO_BIN(?);
 
         SELECT @captured_agent_id AS agent_id;
@@ -108,13 +111,13 @@ module.exports.update_by_server_id = (data, columns, callback) => {
     })
 }
 
-module.exports.select_by_server_id = (data, columns, callback) => {
-    const formatted_columns = columns.map(column => {
-        if (column === 'server_id') return 'BIN_TO_UUID(server_id) AS server_id'
+export const select_by_server_id = (data, columns, callback) => {
+    const formatted_columns = columns.map((column) => {
+        if (column === "server_id") return "BIN_TO_UUID(server_id) AS server_id"
         return column
     })
     const statement = `
-    SELECT ${formatted_columns.join(', ')}
+    SELECT ${formatted_columns.join(", ")}
     FROM Server
     WHERE server_id = UUID_TO_BIN(?)
     `
@@ -122,13 +125,13 @@ module.exports.select_by_server_id = (data, columns, callback) => {
     pool.query(statement, values, callback)
 }
 
-module.exports.select_by_agent_id = (data, columns, callback) => {
-    const formatted_columns = columns.map(column => {
-        if (column === 'server_id') return 'BIN_TO_UUID(server_id) AS server_id'
+export const select_by_agent_id = (data, columns, callback) => {
+    const formatted_columns = columns.map((column) => {
+        if (column === "server_id") return "BIN_TO_UUID(server_id) AS server_id"
         return column
     })
     const statement = `
-    SELECT ${formatted_columns.join(', ')}
+    SELECT ${formatted_columns.join(", ")}
     FROM Server
     WHERE agent_id = UUID_TO_BIN(?)
     `

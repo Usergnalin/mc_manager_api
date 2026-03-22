@@ -1,8 +1,8 @@
-const pool = require("../services/db")
-const { v7: uuid } = require('uuid')
-const { generate_slug } = require("../utils")
+import pool from "../services/db.js"
+import { v7 as uuid } from "uuid"
+import { generate_slug } from "../utils.js"
 
-module.exports.insert_single = (data, callback) => {
+export const insert_single = (data, callback) => {
     const statement = `
     START TRANSACTION;
     INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?);
@@ -11,10 +11,7 @@ module.exports.insert_single = (data, callback) => {
     `
     const team_id = uuid()
     const slug = generate_slug()
-    const values = [
-        team_id, data.team_name, slug,
-        data.user_id, team_id, "admin"
-    ]
+    const values = [team_id, data.team_name, slug, data.user_id, team_id, "admin"]
     pool.query(statement, values, (error, results) => {
         if (results) {
             results.team_id = team_id
@@ -39,7 +36,7 @@ module.exports.insert_single = (data, callback) => {
 //     pool.query(statement, values, callback)
 // }
 
-module.exports.check_access_by_user_id_and_role = (data, callback) => {
+export const check_access_by_user_id_and_role = (data, callback) => {
     const statement = `
         SELECT EXISTS (
             SELECT 1 

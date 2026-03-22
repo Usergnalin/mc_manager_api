@@ -1,9 +1,8 @@
-const express = require("express")
-const cookieParser = require("cookie-parser")
-const helmet = require("helmet")
-const cors = require("cors")
-const path = require("path")
-const mainRoutes = require("./routes/mainRoutes")
+import express from "express"
+import cookieParser from "cookie-parser"
+import helmet from "helmet"
+import cors from "cors"
+import mainRoutes from "./routes/mainRoutes.js"
 const app = express()
 
 const content_security_policy = {
@@ -62,4 +61,4 @@ app.use((req, res, next) => {
     res.status(404).send("Page Not Found")
 })
 
-module.exports = app
+export default app

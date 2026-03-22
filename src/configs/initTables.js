@@ -1,6 +1,6 @@
-const pool = require("../services/db")
-const { redis_client, initialise_redis } = require("../services/redis")
-const { COMMAND_STATUS, SERVER_STATUS, AGENT_STATUS, TEAM_ROLES } = require("../configs/constants")
+import pool from "../services/db.js"
+import { redis_client, initialise_redis } from "../services/redis.js"
+import { COMMAND_STATUS, SERVER_STATUS, AGENT_STATUS, TEAM_ROLES } from "../configs/constants.js"
 
 const SQLSTATEMENT = `
 DROP TABLE IF EXISTS UserTeam;
@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS User;
 DROP TABLE IF EXISTS Server;
 DROP TABLE IF EXISTS Agent;
 DROP TABLE IF EXISTS Team;
+DROP TABLE IF EXISTS Session;
 
 CREATE TABLE User (
   user_id BINARY(16) PRIMARY KEY,
@@ -79,22 +80,23 @@ const init_tables = async () => {
     try {
         await initialise_redis()
         console.log("Redis Connected")
-        redis_client.flushAll()
-        .then(() => {
-            console.log("Redis wiped successfully")
-            pool.query(SQLSTATEMENT, (error, results) => {
-                if (error) {
-                    console.error("Error creating tables:", error)
-                } else {
-                    console.log("MySQL Tables created successfully")
-                }
-                process.exit()
+        redis_client
+            .flushAll()
+            .then(() => {
+                console.log("Redis wiped successfully")
+                pool.query(SQLSTATEMENT, (error, results) => {
+                    if (error) {
+                        console.error("Error creating tables:", error)
+                    } else {
+                        console.log("MySQL Tables created successfully")
+                    }
+                    process.exit()
+                })
             })
-        })
-        .catch((redis_error) => {
-            console.error("Failed to wipe Redis:", redis_error)
-            process.exit(1)
-        })
+            .catch((redis_error) => {
+                console.error("Failed to wipe Redis:", redis_error)
+                process.exit(1)
+            })
     } catch (error) {
         console.error("Startup Error:", error)
         process.exit(1)

@@ -1,9 +1,12 @@
-const bcrypt = require("bcrypt")
-const zxcvbn = require("zxcvbn")
-const { PASSWORD_MIN_SCORE } = require("../configs/constants")
-const { get_path , set_path } = require("../utils")
+import bcrypt from "bcrypt"
+import zxcvbn from "zxcvbn"
+import { PASSWORD_MIN_SCORE } from "../configs/constants.js"
+import { get_path, set_path } from "../utils.js"
 
-module.exports.compare_password = ({input_password_path = "login_data.password", stored_hash_path = "user_data.password"} = {}) => {
+export const compare_password = ({
+    input_password_path = "login_data.password",
+    stored_hash_path = "user_data.password",
+} = {}) => {
     return (req, res, next) => {
         const input_password = get_path(res, input_password_path)
         set_path(res, input_password_path, null)
@@ -27,7 +30,10 @@ module.exports.compare_password = ({input_password_path = "login_data.password",
     }
 }
 
-module.exports.hash_password = ({password_path = "user_data.password" , hash_path = "user_data.password"} = {}) => {
+export const hash_password = ({
+    password_path = "user_data.password",
+    hash_path = "user_data.password",
+} = {}) => {
     return (req, res, next) => {
         const password = get_path(res, password_path)
         set_path(res, password_path, null)

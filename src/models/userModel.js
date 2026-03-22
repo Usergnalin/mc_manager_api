@@ -1,8 +1,8 @@
-const pool = require("../services/db")
-const { v7: uuid } = require('uuid')
-const { generate_slug } = require("../utils")
+import pool from "../services/db.js"
+import { v7 as uuid } from "uuid"
+import { generate_slug } from "../utils.js"
 
-module.exports.insert_single = (data, callback) => {
+export const insert_single = (data, callback) => {
     const statement = `
     START TRANSACTION;
     INSERT INTO User (user_id, username, password) VALUES (UUID_TO_BIN(?), ?, ?);
@@ -15,9 +15,15 @@ module.exports.insert_single = (data, callback) => {
     const slug = generate_slug()
     const team_name = `${data.username}'s Team`
     const values = [
-        user_id, data.username, data.password,
-        team_id, team_name, slug,
-        user_id, team_id, "admin"
+        user_id,
+        data.username,
+        data.password,
+        team_id,
+        team_name,
+        slug,
+        user_id,
+        team_id,
+        "admin",
     ]
     pool.query(statement, values, (error, results) => {
         if (results) {
@@ -29,13 +35,13 @@ module.exports.insert_single = (data, callback) => {
     })
 }
 
-module.exports.select_by_id = (data, columns, callback) => {
-    const formatted_columns = columns.map(column => {
-        if (column === 'user_id') return 'BIN_TO_UUID(user_id) AS user_id';
-        return column;
+export const select_by_id = (data, columns, callback) => {
+    const formatted_columns = columns.map((column) => {
+        if (column === "user_id") return "BIN_TO_UUID(user_id) AS user_id"
+        return column
     })
     const statement = `
-    SELECT ${formatted_columns.join(', ')}
+    SELECT ${formatted_columns.join(", ")}
     FROM User
     WHERE user_id = UUID_TO_BIN(?)
     `
@@ -43,13 +49,13 @@ module.exports.select_by_id = (data, columns, callback) => {
     pool.query(statement, values, callback)
 }
 
-module.exports.select_by_username = (data, columns, callback) => {
-    const formatted_columns = columns.map(column => {
-        if (column === 'user_id') return 'BIN_TO_UUID(user_id) AS user_id'
+export const select_by_username = (data, columns, callback) => {
+    const formatted_columns = columns.map((column) => {
+        if (column === "user_id") return "BIN_TO_UUID(user_id) AS user_id"
         return column
     })
     const statement = `
-    SELECT ${formatted_columns.join(', ')}
+    SELECT ${formatted_columns.join(", ")}
     FROM User
     WHERE username = ?
     `
@@ -57,10 +63,10 @@ module.exports.select_by_username = (data, columns, callback) => {
     pool.query(statement, values, callback)
 }
 
-module.exports.update_by_id = (data, columns, callback) => {
+export const update_by_id = (data, columns, callback) => {
     const fields = []
     const values = []
-    columns.forEach(column => {
+    columns.forEach((column) => {
         if (data[column] !== undefined) {
             fields.push(`${column} = ?`)
             values.push(data[column])
@@ -68,7 +74,7 @@ module.exports.update_by_id = (data, columns, callback) => {
     })
     const statement = `
         UPDATE User
-        SET ${fields.join(', ')}
+        SET ${fields.join(", ")}
         WHERE user_id = UUID_TO_BIN(?)
     `
     values.push(data.user_id)

@@ -1,4 +1,4 @@
-const mysql = require("mysql2")
+import mysql from "mysql2"
 
 const setting = {
     connectionLimit: 10, //set limit to 10 connection
@@ -12,4 +12,4 @@ const setting = {
 
 const pool = mysql.createPool(setting)
 
-module.exports = pool
+export default pool

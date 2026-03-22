@@ -1,9 +1,12 @@
-const user_model = require("../models/userModel.js")
-const { get_path, set_path } = require("../utils.js")
+import * as user_model from "../models/userModel.js"
+import { get_path, set_path } from "../utils.js"
 
 // === Database operations ===
 
-module.exports.create_user = ({user_data_path = "user_data", output_user_team_data_path = "user_team_data"} = {}) => {
+export const create_user = ({
+    user_data_path = "user_data",
+    output_user_team_data_path = "user_team_data",
+} = {}) => {
     return (req, res, next) => {
         const { username, password } = get_path(res, user_data_path)
         if (username === undefined || password === undefined) {
@@ -22,14 +25,18 @@ module.exports.create_user = ({user_data_path = "user_data", output_user_team_da
             set_path(res, output_user_team_data_path, {
                 user_id: results.user_id,
                 team_id: results.team_id,
-                slug: results.slug
+                slug: results.slug,
             })
             next()
         })
     }
 }
 
-module.exports.get_user_by_id = ({fields, user_id_path = "user_id", user_data_path = "user_data"} = {}) => {
+export const get_user_by_id = ({
+    fields,
+    user_id_path = "user_id",
+    user_data_path = "user_data",
+} = {}) => {
     return (req, res, next) => {
         if (!Array.isArray(fields)) {
             console.error("Invalid fields:", fields)
@@ -54,7 +61,11 @@ module.exports.get_user_by_id = ({fields, user_id_path = "user_id", user_data_pa
     }
 }
 
-module.exports.get_user_by_username = ({fields, username_path = "user_data.username", user_data_path = "user_data"} = {}) => {
+export const get_user_by_username = ({
+    fields,
+    username_path = "user_data.username",
+    user_data_path = "user_data",
+} = {}) => {
     return (req, res, next) => {
         if (!Array.isArray(fields)) {
             console.error("Invalid fields:", fields)
@@ -79,7 +90,11 @@ module.exports.get_user_by_username = ({fields, username_path = "user_data.usern
     }
 }
 
-module.exports.update_user_by_id = ({fields, user_id_path = "user_id", user_data_path = "user_data"} = {}) => {
+export const update_user_by_id = ({
+    fields,
+    user_id_path = "user_id",
+    user_data_path = "user_data",
+} = {}) => {
     return (req, res, next) => {
         if (!Array.isArray(fields)) {
             console.error("Invalid fields:", fields)
@@ -91,7 +106,7 @@ module.exports.update_user_by_id = ({fields, user_id_path = "user_id", user_data
             console.error("No data found at path(s):", user_id_path, user_data_path)
             return res.status(500).json({ message: "Internal server error" })
         }
-        user_model.update_by_id({user_id, ...user_data}, fields, (error, results) => {
+        user_model.update_by_id({ user_id, ...user_data }, fields, (error, results) => {
             if (error) {
                 if (error.code === "ER_DUP_ENTRY") {
                     return res.status(409).json({ message: "Username already exists" })

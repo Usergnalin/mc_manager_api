@@ -1,11 +1,11 @@
-const express = require("express")
+import express from "express"
 const router = express.Router()
-const userRoutes = require("./userRoutes")
-const teamRoutes = require("./teamRoutes")
-const agentRoutes = require("./agentRoutes")
-const commandRoutes = require("./commandRoutes")
-const serverRoutes = require("./serverRoutes")
-const constants = require("../configs/constants")
+import userRoutes from "./userRoutes.js"
+import teamRoutes from "./teamRoutes.js"
+import agentRoutes from "./agentRoutes.js"
+import commandRoutes from "./commandRoutes.js"
+import serverRoutes from "./serverRoutes.js"
+import { read_constants } from "../configs/constants.js"
 
 router.use("/user", userRoutes)
 router.use("/team", teamRoutes)
@@ -13,6 +13,6 @@ router.use("/agent", agentRoutes)
 router.use("/command", commandRoutes)
 router.use("/server", serverRoutes)
 
-router.get("/constants", constants.read_constants)
+router.get("/constants", read_constants)
 
-module.exports = router
+export default router

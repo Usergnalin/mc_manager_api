@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////
 // INCLUDES
 //////////////////////////////////////////////////////
-const app = require("./src/app")
-const { initialise_redis } = require("./src/services/redis")
-const agent_startup = require("./src/startup/agentStatus")
+import app from "./src/app.js"
+import { initialise_redis } from "./src/services/redis.js"
+import agent_startup from "./src/startup/agentStatus.js"
 
 //////////////////////////////////////////////////////
 // SETUP ENVIRONMENT
@@ -21,7 +21,7 @@ const start_server = async () => {
         agent_startup((error, results) => {
             if (error) {
                 console.error("Cleanup failed", error)
-                process.exit(1);
+                process.exit(1)
             }
             app.listen(PORT, () => console.log("Server Live"))
         })

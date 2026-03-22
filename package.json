@@ -3,6 +3,7 @@
     "version": "1.1.0",
     "main": "index.js",
     "author": "nlang.25@ichat.sp.edu.sg p2508597 DAAA/FT/1B/02",
+    "type": "module",
     "scripts": {
         "init_tables": "dotenv -e .env -- node src/configs/initTables.js",
         "stop": "sudo systemctl stop webserver && sudo kill -9 $(lsof -t -i :3000) || true",

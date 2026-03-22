@@ -1,6 +1,6 @@
-const { get_nested_value, get_path } = require("../utils")
-const { validate: validate_uuid } = require("uuid")
-const { SERVER_STATUS, COMMAND_STATUS } = require("../configs/constants")
+import { get_path } from "../utils.js"
+import { validate as validate_uuid } from "uuid"
+import { SERVER_STATUS, COMMAND_STATUS } from "../configs/constants.js"
 
 // === Request handlers ===
 
@@ -8,34 +8,35 @@ const validation_logic = {
     username: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 63) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 63 ? trimmed : null
     },
     password: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 63) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 63 ? trimmed : null
     },
     team_name: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
     },
     team_id: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (validate_uuid(trimmed)) ? trimmed : null
+        return validate_uuid(trimmed) ? trimmed : null
     },
     agent_name: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
     },
     agent_id: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (validate_uuid(trimmed)) ? trimmed : null
+        return validate_uuid(trimmed) ? trimmed : null
     },
     command: (value) => {
+        let payload
         if (typeof value === "string") {
             try {
                 payload = JSON.parse(value)
@@ -47,7 +48,7 @@ const validation_logic = {
         } else {
             return null
         }
-        return (typeof payload !== "object" || payload === null) ? null : payload
+        return typeof payload !== "object" || payload === null ? null : payload
     },
     linking_code: (value) => {
         if (typeof value !== "string") return null
@@ -55,20 +56,21 @@ const validation_logic = {
         if (trimmed.length === 0) return null
         const parts = trimmed.split("-")
         if (parts.length !== 4) return null
-        if (parts.some(part => part.length === 0)) return null
+        if (parts.some((part) => part.length === 0)) return null
         return trimmed
     },
     public_key: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
     },
     server_name: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (trimmed.length > 0 && trimmed.length <= 255) ? trimmed : null
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
     },
     properties: (value) => {
+        let payload
         if (typeof value === "string") {
             try {
                 payload = JSON.parse(value)
@@ -80,17 +82,17 @@ const validation_logic = {
         } else {
             return null
         }
-        return (typeof payload !== "object" || payload === null) ? null : payload
+        return typeof payload !== "object" || payload === null ? null : payload
     },
     server_id: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (validate_uuid(trimmed)) ? trimmed : null
+        return validate_uuid(trimmed) ? trimmed : null
     },
     command_id: (value) => {
         if (typeof value !== "string") return null
         const trimmed = value.trim()
-        return (validate_uuid(trimmed)) ? trimmed : null
+        return validate_uuid(trimmed) ? trimmed : null
     },
     status: (value) => {
         if (typeof value !== "string") return null
@@ -103,10 +105,10 @@ const validation_logic = {
         const trimmed = value.trim().toLowerCase()
         if (!COMMAND_STATUS.includes(trimmed)) return null
         return trimmed
-    }
+    },
 }
 
-module.exports.load_body_data = ({fields, data_path} = {}) => {
+export const load_body_data = ({ fields, data_path } = {}) => {
     return (req, res, next) => {
         if (req.body === undefined) {
             return res.status(422).json({ message: "Missing body" })
@@ -132,7 +134,7 @@ module.exports.load_body_data = ({fields, data_path} = {}) => {
     }
 }
 
-module.exports.load_param_data = ({field, data_path} = {}) => {
+export const load_param_data = ({ field, data_path } = {}) => {
     return (req, res, next) => {
         if (req.params === undefined) {
             return res.status(422).json({ message: "Missing params" })
@@ -156,7 +158,7 @@ module.exports.load_param_data = ({field, data_path} = {}) => {
 
 // === Response handlers ===
 
-module.exports.send_data = ({data_path, status_code = 200} = {}) => {
+export const send_data = ({ data_path, status_code = 200 } = {}) => {
     return (req, res, next) => {
         const data = get_path(res, data_path)
         if (data === undefined) {
@@ -167,7 +169,7 @@ module.exports.send_data = ({data_path, status_code = 200} = {}) => {
     }
 }
 
-module.exports.send_empty = () => {
+export const send_empty = () => {
     return (req, res, next) => {
         res.status(204).send()
     }

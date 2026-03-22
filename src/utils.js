@@ -1,11 +1,11 @@
-const crypto = require('crypto')
-const ms = require('ms')
-const { MAX_INT_UNSIGNED, SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL } = require("./configs/constants")
-const { predicates, objects } = require('friendly-words')
+import crypto from "node:crypto"
+import ms from "ms"
+import { MAX_INT_UNSIGNED, SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL } from "./configs/constants.js"
+import { predicates, objects } from "friendly-words"
 
 const sse_heartbeat_interval = ms(SSE_HEARTBEAT_INTERVAL)
 
-module.exports.is_unsigned_int = (value) => {
+export const is_unsigned_int = (value) => {
     const parsed_value = Number(value)
     if (value === "" || value === null || value === undefined) {
         return false
@@ -18,7 +18,7 @@ module.exports.is_unsigned_int = (value) => {
     )
 }
 
-module.exports.generate_slug = () => {
+export const generate_slug = () => {
     const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
     let result = ""
     const random_bytes = crypto.randomBytes(SLUG_LENGTH)
@@ -28,7 +28,7 @@ module.exports.generate_slug = () => {
     return result
 }
 
-module.exports.generate_phrase = () => {
+export const generate_phrase = () => {
     const p1 = predicates[crypto.randomInt(0, predicates.length)]
     const o1 = objects[crypto.randomInt(0, objects.length)]
     const p2 = predicates[crypto.randomInt(0, predicates.length)]
@@ -36,10 +36,10 @@ module.exports.generate_phrase = () => {
     return `${p1}-${o1}-${p2}-${o2}`
 }
 
-module.exports.get_path = (res, path) => {
-    if (path === undefined || path === null || typeof path !== 'string') return undefined
-    
-    return path.split('.').reduce((accumulator, property) => {
+export const get_path = (res, path) => {
+    if (path === undefined || path === null || typeof path !== "string") return undefined
+
+    return path.split(".").reduce((accumulator, property) => {
         if (accumulator && accumulator[property] !== undefined) {
             return accumulator[property]
         }
@@ -47,23 +47,23 @@ module.exports.get_path = (res, path) => {
     }, res.locals)
 }
 
-module.exports.set_path = (res, path, value) => {
-    if (path === undefined || path === null || typeof path !== 'string') return
-    
-    const properties = path.split('.')
+export const set_path = (res, path, value) => {
+    if (path === undefined || path === null || typeof path !== "string") return
+
+    const properties = path.split(".")
     const last_property = properties.pop()
-    
+
     const target_object = properties.reduce((accumulator, property) => {
         if (accumulator[property] === undefined) {
             accumulator[property] = {}
         }
         return accumulator[property]
     }, res.locals)
-    
+
     target_object[last_property] = value
 }
 
-module.exports.filter_object = (object, allowed_keys) => {
+export const filter_object = (object, allowed_keys) => {
     return allowed_keys.reduce((obj, key) => {
         if (key in object) {
             obj[key] = object[key]
@@ -72,22 +72,22 @@ module.exports.filter_object = (object, allowed_keys) => {
     }, {})
 }
 
-module.exports.create_stream = (res, { on_heartbeat, on_close, session_expiry }) => {
+export const create_stream = (res, { on_heartbeat, on_close, session_expiry }) => {
     let is_stopped = false
 
     res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no'
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
     })
 
     const stop = () => {
         if (is_stopped) return
         is_stopped = true
 
-        clearInterval(heartbeat_timer);
-        if (typeof on_close === 'function') on_close()
+        clearInterval(heartbeat_timer)
+        if (typeof on_close === "function") on_close()
         if (!res.writableEnded) res.end()
     }
 
@@ -97,8 +97,8 @@ module.exports.create_stream = (res, { on_heartbeat, on_close, session_expiry })
             if (res.writable) res.write(`data: {"message": "Session expired"}\n\n`)
             return stop()
         }
-        if (res.writable && res.write(': keep-alive\n\n')) {
-            if (typeof on_heartbeat === 'function') on_heartbeat(stop)
+        if (res.writable && res.write(": keep-alive\n\n")) {
+            if (typeof on_heartbeat === "function") on_heartbeat(stop)
         } else {
             stop()
         }
@@ -107,13 +107,13 @@ module.exports.create_stream = (res, { on_heartbeat, on_close, session_expiry })
     perform_heartbeat()
     const heartbeat_timer = setInterval(perform_heartbeat, sse_heartbeat_interval)
 
-    res.on('close', stop)
+    res.on("close", stop)
 
     return {
         send: (data) => {
             if (is_stopped || !res.writable) return false
             return res.write(`data: ${JSON.stringify(data)}\n\n`)
         },
-        stop
+        stop,
     }
 }
