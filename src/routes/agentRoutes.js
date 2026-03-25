@@ -2,6 +2,7 @@ import express from "express"
 const router = express.Router()
 import * as token_handler from "../middlewares/tokenHandler.js"
 import * as nonce_handler from "../middlewares/nonceHandler.js"
+import * as session_handler from "../middlewares/sessionHandler.js"
 import * as agent_auth_handler from "../middlewares/agentAuthHandler.js"
 import * as global_controller from "../controllers/globalController.js"
 import * as agent_controller from "../controllers/agentController.js"
@@ -22,7 +23,7 @@ router.post(
 // Create linking code (user)
 router.post(
     "/:team_id/link",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "team_id", data_path: "team_id" }),
     team_controller.check_access_by_user_id_and_role({ role: ["admin"] }),
     agent_controller.create_agent_linking_code(),
@@ -42,7 +43,7 @@ router.get(
 // Get agents by team id (user)
 router.get(
     "/team/:team_id",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "team_id", data_path: "team_id" }),
     team_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
     agent_controller.get_by_team_id({
@@ -54,7 +55,7 @@ router.get(
 // Stream agents by team id (user)
 router.get(
     "/team/:team_id/stream",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "team_id", data_path: "team_id" }),
     team_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
     agent_controller.stream_agent_by_team_id({

@@ -1,5 +1,6 @@
 import express from "express"
 const router = express.Router()
+import * as session_handler from "../middlewares/sessionHandler.js"
 import * as token_handler from "../middlewares/tokenHandler.js"
 import * as global_controller from "../controllers/globalController.js"
 import * as agent_controller from "../controllers/agentController.js"
@@ -42,7 +43,7 @@ router.put(
 // Get server details by server id (user)
 router.get(
     "/:server_id",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "server_id", data_path: "server_id" }),
     server_controller.check_access_by_user_id(),
     server_controller.get_server_by_id({ fields: ["server_name", "properties", "status"] }),
@@ -52,7 +53,7 @@ router.get(
 // Get server details by agent id (user)
 router.get(
     "/agent/:agent_id",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
     agent_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
     server_controller.get_server_by_agent_id({
@@ -64,7 +65,7 @@ router.get(
 // Stream server details by agent id (user)
 router.get(
     "/agent/:agent_id/stream",
-    token_handler.verify_token(),
+    session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
     agent_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
     server_controller.stream_server_by_agent_id({
