@@ -82,21 +82,32 @@ export const get_server_by_agent_id = ({
     }
 }
 
-export const stream_server_by_agent_id = ({ fields, agent_id_path = "agent_id" } = {}) => {
+export const stream_server_by_agent_id = ({ fields, agent_id_path = "agent_id", session_id_path = "session_id" } = {}) => {
     return (req, res, next) => {
         const agent_id = get_path(res, agent_id_path)
+        const session_id = get_path(res, session_id_path)
 
-        if (agent_id === undefined) {
-            console.error("No data found at path:", agent_id_path)
+        if (agent_id === undefined, session_id === undefined) {
+            console.error("No data found at path:", agent_id_path, session_id_path)
             return res.status(500).json({ message: "Internal server error" })
         }
 
-        const event_name = `server:agent:${agent_id}`
+        const event_names = [
+            `create:server:agent:${agent_id}`,
+            `update:server:agent:${agent_id}`,
+            `delete:server:agent:${agent_id}`
+        ]
 
-        const on_event = (payload) => {
+        const subscriptions = new Map()
+
+        const on_event = (event, payload) => {
             try {
+                const action = event.split(':')[0]
                 const parsed_payload = JSON.parse(payload)
-                const filtered_payload = filter_object(parsed_payload, fields)
+                const filtered_payload = { 
+                    ...filter_object(parsed_payload, fields), 
+                    _action: action 
+                }
                 sse.send(filtered_payload)
             } catch (parse_error) {
                 console.error("Payload parse error:", parse_error)
@@ -105,15 +116,21 @@ export const stream_server_by_agent_id = ({ fields, agent_id_path = "agent_id" }
 
         const sse = create_stream(res, {
             session_expiry: res.locals.session_expiry,
-
+            session_id: session_id,
             on_heartbeat: (stop) => {},
-
             on_close: () => {
-                db_events.off(event_name, on_event)
+                subscriptions.forEach((handler, event) => {
+                    db_events.off(event, handler)
+                })
+                subscriptions.clear()
             },
         })
 
-        db_events.on(event_name, on_event)
+        event_names.forEach(event => {
+            const handler = (payload) => on_event(event, payload)
+            subscriptions.set(event, handler)
+            db_events.on(event, handler)
+        })
     }
 }
 

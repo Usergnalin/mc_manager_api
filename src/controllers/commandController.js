@@ -113,64 +113,32 @@ export const update_by_command_id = ({
     }
 }
 
-// module.exports.stream_command_by_agent_id = ({ fields, agent_id_path = "agent_id" } = {}) => {
-//     return (req, res, next) => {
-//         const agent_id = get_path(res, agent_id_path)
-//         const session_expiry = res.locals.session_expiry
-//         const stop_stream = () => {
-//             clearInterval(keeper)
-//             db_events.off(event_name, on_event)
-//             res.end()
-//         }
-//         if (agent_id === undefined) {
-//             console.error("No data found at path:", agent_id_path)
-//             return res.status(500).json({ message: "Internal server error" })
-//         }
-//         res.setHeader('Content-Type', 'text/event-stream')
-//         res.setHeader('Cache-Control', 'no-cache, no-transform')
-//         res.setHeader('Connection', 'keep-alive')
-//         res.setHeader('X-Accel-Buffering', 'no')
-//         res.flushHeaders()
-//         const event_name = `command:agent:${agent_id}`
-//         const on_event = (payload) => {
-//             if (session_expiry && Date.now() > session_expiry) {
-//                 res.write(`data: {"message": "Session expired"}\n\n`)
-//                 stop_stream()
-//                 return
-//             }
-//             const parsed_payload = JSON.parse(payload)
-//             const filtered_payload = JSON.stringify(filter_object(parsed_payload, fields))
-//             res.write(`data: ${filtered_payload}\n\n`)
-//         }
-//         db_events.on(event_name, on_event)
-//         res.write(': keep-alive\n\n')
-//         const keeper = setInterval(() => {
-//             if (session_expiry && Date.now() > session_expiry) {
-//                 res.write(`data: {"message": "Session expired"}\n\n`)
-//                 stop_stream()
-//                 return
-//             }
-//             res.write(': keep-alive\n\n')
-//         }, sse_keep_alive_interval)
-//         req.on('close', stop_stream)
-//     }
-// }
-
-export const stream_command_by_agent_id = ({ fields, agent_id_path = "agent_id" } = {}) => {
+export const stream_command_by_agent_id = ({ fields, agent_id_path = "agent_id", session_id_path = "session_id"} = {}) => {
     return (req, res, next) => {
         const agent_id = get_path(res, agent_id_path)
+        const session_id = get_path(res, session_id_path)
 
-        if (agent_id === undefined) {
-            console.error("No data found at path:", agent_id_path)
+        if (agent_id === undefined, session_id === undefined) {
+            console.error("No data found at path:", agent_id_path, session_id_path)
             return res.status(500).json({ message: "Internal server error" })
         }
 
-        const event_name = `command:agent:${agent_id}`
+        const event_names = [
+            `create:command:agent:${agent_id}`,
+            `update:command:agent:${agent_id}`,
+            `delete:command:agent:${agent_id}`
+        ]
 
-        const on_event = (payload) => {
+        const subscriptions = new Map()
+
+        const on_event = (event, payload) => {
             try {
+                const action = event.split(':')[0]
                 const parsed_payload = JSON.parse(payload)
-                const filtered_payload = filter_object(parsed_payload, fields)
+                const filtered_payload = { 
+                    ...filter_object(parsed_payload, fields), 
+                    _action: action 
+                }
                 sse.send(filtered_payload)
             } catch (parse_error) {
                 console.error("Payload parse error:", parse_error)
@@ -179,15 +147,21 @@ export const stream_command_by_agent_id = ({ fields, agent_id_path = "agent_id" 
 
         const sse = create_stream(res, {
             session_expiry: res.locals.session_expiry,
-
+            session_id: session_id,
             on_heartbeat: (stop) => {},
-
             on_close: () => {
-                db_events.off(event_name, on_event)
+                subscriptions.forEach((handler, event) => {
+                    db_events.off(event, handler)
+                })
+                subscriptions.clear()
             },
         })
 
-        db_events.on(event_name, on_event)
+        event_names.forEach(event => {
+            const handler = (payload) => on_event(event, payload)
+            subscriptions.set(event, handler)
+            db_events.on(event, handler)
+        })
     }
 }
 

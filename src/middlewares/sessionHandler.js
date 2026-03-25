@@ -10,7 +10,8 @@ const token_secret = process.env.TOKEN_SECRET
 const user_refresh_token_duration = ms(process.env.USER_REFRESH_TOKEN_DURATION) / 1000
 const token_algorithm = process.env.TOKEN_ALGORITHM
 
-const user_token_duration = ms(process.env.USER_TOKEN_DURATION)
+const user_token_duration_ms = ms(process.env.USER_TOKEN_DURATION)
+const user_token_duration_s = user_token_duration_ms / 1000
 
 export const create_session = ({ user_id_path = "user_id", output_session_id_path = "session_id" } = {}) => {
     return (req, res, next) => {
@@ -116,7 +117,7 @@ export const verify_session_token = ({ output_user_id_path = "user_id", output_s
             if (error) {
                 return res.status(401).json({ message: "Invalid session token" })
             }
-            redis_client.get(`revoked_session:${decoded.session_id}`)
+            redis_client.exists(`revoked_session:${decoded.session_id}`)
             .then(revoked => {
                 if (revoked) {
                     return res.status(401).json({ message: "Invalid session token" })
@@ -147,7 +148,7 @@ export const generate_session_token = ({ user_id_path = "user_id", session_id_pa
         }
         const options = {
             algorithm: token_algorithm,
-            expiresIn: user_token_duration,
+            expiresIn: user_token_duration_s,
         }
         jwt.sign(payload, token_secret, options, (error, session_token) => {
             if (error) {
@@ -159,7 +160,7 @@ export const generate_session_token = ({ user_id_path = "user_id", session_id_pa
                     httpOnly: true,
                     secure: true,
                     sameSite: "strict",
-                    maxAge: user_token_duration,
+                    maxAge: user_token_duration_ms,
                 })
                 next()
             }

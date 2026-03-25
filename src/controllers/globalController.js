@@ -125,7 +125,6 @@ export const load_body_data = ({ fields, data_path } = {}) => {
             }
             const validated_value = validation_logic[field](raw_value)
             if (validated_value === null) {
-                console.log(field)
                 return res.status(400).json({ message: `Invalid ${field}` })
             }
             res.locals[data_path][field] = validated_value

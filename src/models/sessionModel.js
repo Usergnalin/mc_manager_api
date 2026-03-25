@@ -80,49 +80,6 @@ export const delete_by_user_id = (data, callback) => {
     })
 }
 
-// export const rotate_token = (data, callback) => {
-//     const session_id = uuid()
-//     const select_statement = `
-//         SELECT user_id FROM Session
-//         WHERE refresh_token = ? AND expires_at > NOW()
-//     `
-//     const delete_statement = `
-//         DELETE FROM Session WHERE refresh_token = ?
-//     `
-//     const insert_statement = `
-//         INSERT INTO Session (session_id, user_id, refresh_token, expires_at)
-//         VALUES (UUID_TO_BIN(?), ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))
-//     `
-//     pool.getConnection((error, connection) => {
-//         if (error) return callback(error, null)
-//         connection.beginTransaction(error => {
-//             if (error) return callback(error, null)
-//             connection.query(select_statement, [data.old_token], (error, results) => {
-//                 if (error) return connection.rollback(() => callback(error, null))
-//                 if (!results.length) {
-//                     return connection.rollback(() => callback(null, null))
-//                 }
-//                 const user_id = results[0].user_id
-//                 connection.query(delete_statement, [data.old_token], (error) => {
-//                     if (error) return connection.rollback(() => callback(error, null))
-//                     connection.query(
-//                         insert_statement,
-//                         [session_id, user_id, data.new_token, user_refresh_token_duration],
-//                         (error, results) => {
-//                             if (error) return connection.rollback(() => callback(error, null))
-//                             connection.commit(error => {
-//                                 if (error) return connection.rollback(() => callback(error, null))
-//                                 connection.release()
-//                                 callback(null, results)
-//                             })
-//                         }
-//                     )
-//                 })
-//             })
-//         })
-//     })
-// }
-
 async function refresh_token_async (data) {
     const promise_pool = pool.promise()
     const connection = await promise_pool.getConnection()

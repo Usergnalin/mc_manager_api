@@ -17,8 +17,8 @@ export const insert_single = (data, callback) => {
             return callback(error, null)
         }
         const payload = JSON.stringify(data)
-        db_events.emit(`server:server:${data.server_id}`, payload)
-        db_events.emit(`server:agent:${data.agent_id}`, payload)
+        db_events.emit(`create:server:server:${data.server_id}`, payload)
+        db_events.emit(`create:server:agent:${data.agent_id}`, payload)
         callback(null, results)
     })
 }
@@ -104,8 +104,8 @@ export const update_by_server_id = (data, columns, callback) => {
         if (results[3].affectedRows === 1) {
             const agent_id = results[4][0]?.agent_id
             const payload = JSON.stringify({ ...data, agent_id })
-            db_events.emit(`server:server:${data.server_id}`, payload)
-            db_events.emit(`server:agent:${agent_id}`, payload)
+            db_events.emit(`update:server:server:${data.server_id}`, payload)
+            db_events.emit(`update:server:agent:${agent_id}`, payload)
         }
         callback(null, results[3])
     })

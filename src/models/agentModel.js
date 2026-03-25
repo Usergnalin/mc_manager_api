@@ -26,8 +26,8 @@ export const insert_by_linking_code = (data, callback) => {
                     return callback(error, null)
                 }
                 const payload = JSON.stringify(data)
-                db_events.emit(`agent:agent:${agent_id}`, payload)
-                db_events.emit(`agent:team:${team_id}`, payload)
+                db_events.emit(`create:agent:agent:${agent_id}`, payload)
+                db_events.emit(`create:agent:team:${team_id}`, payload)
 
                 results.agent_id = agent_id
                 redis_client
@@ -104,8 +104,8 @@ export const update_by_agent_id = (data, columns, callback) => {
         if (results[3].affectedRows === 1) {
             const team_id = results[4][0]?.team_id
             const payload = JSON.stringify({ ...data, team_id })
-            db_events.emit(`agent:agent:${data.agent_id}`, payload)
-            db_events.emit(`agent:team:${team_id}`, payload)
+            db_events.emit(`update:agent:agent:${data.agent_id}`, payload)
+            db_events.emit(`update:agent:team:${team_id}`, payload)
         }
         callback(null, results[3])
     })

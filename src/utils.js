@@ -2,6 +2,7 @@ import crypto from "node:crypto"
 import ms from "ms"
 import { MAX_INT_UNSIGNED, SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL } from "./configs/constants.js"
 import { predicates, objects } from "friendly-words"
+import { redis_client } from "./services/redis.js"
 
 const sse_heartbeat_interval = ms(SSE_HEARTBEAT_INTERVAL)
 
@@ -72,7 +73,7 @@ export const filter_object = (object, allowed_keys) => {
     }, {})
 }
 
-export const create_stream = (res, { on_heartbeat, on_close, session_expiry }) => {
+export const create_stream = (res, { on_heartbeat, on_close, session_expiry, session_id }) => {
     let is_stopped = false
 
     res.writeHead(200, {
@@ -97,11 +98,23 @@ export const create_stream = (res, { on_heartbeat, on_close, session_expiry }) =
             if (res.writable) res.write(`data: {"message": "Session expired"}\n\n`)
             return stop()
         }
-        if (res.writable && res.write(": keep-alive\n\n")) {
-            if (typeof on_heartbeat === "function") on_heartbeat(stop)
-        } else {
-            stop()
+        if (session_id) {
+            redis_client.exists(`revoked_session:${session_id}`).then((revoked) => {
+                if (revoked) {
+                    if (res.writable) res.write(`data: {"message": "Session expired"}\n\n`)
+                    return stop()
+                }
+                if (res.writable && res.write(": keep-alive\n\n")) {
+                    if (typeof on_heartbeat === "function") on_heartbeat(stop)
+                } else {
+                    stop()
+                }
+            }).catch((error) => {
+                console.error("Redis error:", error)
+                stop()
+            })
         }
+        
     }
 
     perform_heartbeat()
