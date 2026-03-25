@@ -1,6 +1,6 @@
 import express from "express"
 const router = express.Router()
-import * as token_handler from "../middlewares/tokenHandler.js"
+import * as agent_auth_handler from "../middlewares/agentAuthHandler.js"
 import * as session_handler from "../middlewares/sessionHandler.js"
 import * as global_controller from "../controllers/globalController.js"
 import * as agent_controller from "../controllers/agentController.js"
@@ -20,7 +20,7 @@ router.post(
 // Get all commands by agent id and mark sent (agent)
 router.get(
     "/:agent_id",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     command_controller.get_command_by_agent_id_and_mark_sent({ fields: ["command_id", "command"] }),
     global_controller.send_data({ data_path: "command_data" }),
 )
@@ -28,7 +28,7 @@ router.get(
 // Stream queued commands by agent id and mark sent (agent)
 router.get(
     "/:agent_id/stream",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     command_controller.stream_command_by_agent_id_and_mark_sent({
         fields: ["command_id", "command"],
     }),
@@ -60,7 +60,7 @@ router.get(
 // Update command status (agent)
 router.put(
     "/:command_id/status",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     global_controller.load_param_data({ field: "command_id", data_path: "command_id" }),
     global_controller.load_body_data({ fields: ["command_status"], data_path: "command_data" }),
     command_controller.update_by_command_id({ fields: ["command_status"] }),

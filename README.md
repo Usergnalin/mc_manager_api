@@ -1,126 +1,83 @@
-Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+# Minecraft Manager API (MC Manager API)
 
-Copyright (c) 2026 Ni Lang
+A production-grade RESTful API designed to manage a fleet of Minecraft servers through remote agents. This platform enables centralized control, real-time monitoring, and secure team collaboration for Minecraft server infrastructure.
 
-This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+## 🚀 Key Features
 
-**Challenge Hub** is a full-stack development project designed to gamify physical activity through a structured rewards system. This platform was developed by Ni Lang to demonstrate modular middleware architecture, relational database management, and secure RESTful API design.
-
-## 🚀 Key Features & Gamification
-
-- **Currency System:** Users accumulate **Points** as a virtual currency by successfully completing wellness tasks.
-- **Tiered Challenges:** \* **Community Challenges:** User-generated tasks for goal tracking and social entertainment.
-- **Verified Challenges:** Admin-authored tasks that reward users with points to incentivize activity.
-- **Behavioral Incentives:** A daily streak counter tracks consecutive completions to help users build sustainable wellness habits.
-- **Secure Redemption:** Physical merchandise and digital vouchers are represented as unique **Secure Codes**, which remain redacted until a successful point-based redemption occurs.
+- **Agent-Based Management:** Decentralized architecture where remote "agents" connect to the API to manage local Minecraft server instances.
+- **Real-Time Streaming:** Utilizes Server-Sent Events (SSE) to provide live updates for server status, agent health, and command execution.
+- **Command Queuing:** Securely queue and dispatch console commands to remote servers with status tracking.
+- **Team Collaboration:** Multi-tenant support allowing users to organize into teams with role-based access control (Admin/User).
+- **Secure Linking:** Seamlessly associate new agents with teams using secure, short-lived linking codes.
 
 ---
 
 ## 🛠 Tech Stack
 
-### **Backend & Logic**
+### **Backend Core**
+- **Node.js & Express:** High-performance asynchronous runtime and middleware-based routing.
+- **MySQL:** Relational database for persistent storage of users, teams, agents, and server metadata.
+- **Redis:** In-memory data store for session management and real-time session revocation.
+- **ESM (ECMAScript Modules):** Modern JavaScript module system for better maintainability.
 
-- **Node.js & Express:** High-performance server-side logic and RESTful API routing.
-- **MySQL:** Relational data storage using `mysql2` for optimized query execution.
-- **Systemd:** Production-grade process management and secure environment variable injection.
-- **Media Pipeline:** `Multer` for secure multipart uploads, `Sharp` for image re-encoding, and `Marked` for Markdown-to-HTML rendering.
-
-### **Security & Hardening**
-
-- **OWASP ZAP Verified:** Audited against SQL injection, XSS, and broken authentication.
-- **Defense-in-Depth:** `Helmet.js` for secure headers and strict `CORS` origin-locking.
-- **Identity Management:** `Bcrypt` salt-based hashing and `JWT` (JSON Web Tokens) for stateless sessions.
-- **Input Sanitization:** `DOMPurify` backend filtering and `Zxcvbn` for real-time password strength enforcement.
-
-### **Infrastructure & Storage**
-
-- **ZFS Dataset Isolation:** User uploads reside on a dedicated ZFS dataset, physically separated from the application source code.
-- **Kernel-Level Enforcement:** \* **Quotas:** Limits enforced by the ZFS filesystem to prevent disk exhaustion attacks.
-- **No-Execute (`noexec`):** Dataset-level flag ensuring uploaded files cannot be executed as scripts or binaries.
-
-- **Symlinked Architecture:** The `public/uploads` path is a symbolic link to the ZFS mount point, maintaining project structure while ensuring data persistence and security.
-
-### **Frontend & UI**
-
-- **Responsive Hub Layout:** A "Zen" CSS architecture inspired by modern content platforms.
-- **Local Vendor Assets:** **Bootstrap 5** and **Bootstrap Icons** served directly from the server to eliminate external CDN dependencies and improve privacy.
+### **Security & Identity**
+- **Dual-Auth Model:** 
+    - **Users:** Stateless JWT-based sessions stored in `HttpOnly`, `Secure` cookies with rotation and revocation.
+    - **Agents:** Nonce-based authentication using public key signatures (Ed25519) to ensure agent identity.
+- **Hardening:** 
+    - **Helmet.js** for secure HTTP headers.
+    - **Bcrypt** for robust password hashing.
+    - **Strict CORS** policies and XSRF protection through cookie security.
+- **Input Integrity:** Global request validation and data sanitization pipelines.
 
 ---
 
-## 🏗 Middleware Architecture
+## 🏗 API Architecture
 
-The server follows a strict 4-stage pipeline to ensure data integrity and security:
+The API follows a modular structure to ensure scalability and security:
 
-1. **Request Handling & Validation:** Global controllers apply type, range, and length restrictions. Validated data is trimmed and stored in `res.locals`.
-2. **Database Operations:** Isolated model calls interact only with `res.locals` to prevent direct injection or state leaks.
-3. **Business Logic:** Performs complex calculations (e.g., point deductions, streak logic) based on sanitized data.
-4. **Response Handling:** Standardized output using `res.locals.response_code` for consistent API behavior.
-
----
-
-### 🚀 Automation Scripts
-
-- **`npm start`** – **Production:** Launches the server using standard `node`.
-- **`npm run dev`** – **Development:** Starts the server with `nodemon` for hot-reloading.
-- **`npm run init_tables`** – **Setup:** Wipes and re-initializes all MySQL tables.
-- **`npm run clean`** – **Utility:** Deletes temporary or orphaned image uploads.
-- **`npm run reset`** – **Full Reset:** Executes `clean` + `init_tables` + `dev` in one command.
+1.  **Global Middleware:** Handles authentication, session verification, and request body loading into `res.locals`.
+2.  **Access Control:** Controller-level checks verify permissions based on `user_id`, `team_id`, or `agent_id`.
+3.  **Model Layer:** Isolated database interactions using `mysql2` prepared statements.
+4.  **Real-Time Layer:** SSE-based controllers for low-latency status and command updates.
 
 ---
 
-### ⚙️ Systemd Management
+## 📡 API Reference Summary
 
-Manage the production service using these system commands:
+### **User & Session**
+- `POST /api/user` - Register and auto-login.
+- `POST /api/user/login` - Authenticate and establish session.
+- `POST /api/user/refresh` - Rotate session and refresh tokens.
+- `POST /api/user/logout` - Invalidate current session.
 
-- **Status:** `systemctl status web-server`
-- **Restart:** `sudo systemctl restart web-server`
-- **Logs:** `journalctl -u web-server -f`
+### **Teams & Agents**
+- `POST /api/team` - Create a new management team.
+- `POST /api/agent` - Register a new agent using a linking code.
+- `POST /api/agent/:team_id/link` - Generate a linking code (Admin only).
+- `GET /api/agent/team/:team_id/stream` - Stream status of all agents in a team.
+
+### **Servers & Commands**
+- `POST /api/server` - Register a new server instance via agent.
+- `GET /api/server/agent/:agent_id/stream` - Stream status of servers managed by an agent.
+- `POST /api/command/:agent_id` - Dispatch a command to a specific agent.
+- `GET /api/command/:agent_id/stream` - Agent-side stream to receive queued commands.
+
+---
+
+## ⚙️ Automation & Setup
+
+### **Installation**
+1.  Configure environment variables in `.env` (refer to `.env.example`).
+2.  Install dependencies: `npm install`.
+3.  Initialize database tables: `npm run init_tables`.
+
+### **Utility Scripts**
+- **`npm start`**: Starts the production server.
+- **`npm run init_tables`**: Wipes and re-initializes all MySQL tables.
+- **`npm run clean_code`**: Formats the codebase using Prettier.
+- **`npm run stop`**: Safely stops the webserver and clears the port.
 
 ---
 
-## 📡 API Reference
-
-### Users
-
-| Method   | Endpoint              | Description                                      |
-| -------- | --------------------- | ------------------------------------------------ |
-| `POST`   | `/api/users`          | Create a new user profile.                       |
-| `GET`    | `/api/users/:user_id` | Fetch user profile (public view).                |
-| `GET`    | `/api/users`          | Fetch authenticated user profile (private view). |
-| `PUT`    | `/api/users`          | Update user profile data.                        |
-| `PUT`    | `/api/users/password` | Update user password.                            |
-| `PUT`    | `/api/users/profile`  | Update user profile picture/avatar.              |
-| `DELETE` | `/api/users`          | Delete user account and associated data.         |
-| `POST`   | `/api/users/login`    | Authenticate user and generate JWT token.        |
-
-### Challenges
-
-| Method   | Endpoint                                    | Description                                              |
-| -------- | ------------------------------------------- | -------------------------------------------------------- |
-| `GET`    | `/api/challenges`                           | Retrieve all challenges with completion data.            |
-| `GET`    | `/api/challenges/search/:keyword`           | Search challenges by keyword.                            |
-| `GET`    | `/api/challenges/:challenge_id`             | Fetch a specific challenge by ID.                        |
-| `GET`    | `/api/challenges/creator/:creator_id`       | Retrieve all challenges created by a specific user.      |
-| `POST`   | `/api/challenges`                           | Create a new challenge.                                  |
-| `PUT`    | `/api/challenges/:challenge_id`             | Update challenge details (admin & creator only).         |
-| `PUT`    | `/api/challenges/:challenge_id/thumbnail`   | Update challenge thumbnail image (admin & creator only). |
-| `DELETE` | `/api/challenges/:challenge_id`             | Delete a challenge (admin & creator only).               |
-| `POST`   | `/api/challenges/:challenge_id/completions` | Log a challenge completion and update user points.       |
-| `GET`    | `/api/challenges/:challenge_id/completions` | Retrieve completion records for a challenge.             |
-
-### Reward Codes
-
-| Method | Endpoint                       | Description                                                    |
-| ------ | ------------------------------ | -------------------------------------------------------------- |
-| `GET`  | `/api/code`                    | Retrieve reward codes for authenticated user (codes redacted). |
-| `POST` | `/api/code`                    | Create a new reward code (admin only).                         |
-| `PUT`  | `/api/code/:code_id/thumbnail` | Update code reward thumbnail (admin only).                     |
-| `POST` | `/api/code/:code_id`           | Redeem a code by deducting user points.                        |
-
-### Miscellaneous
-
-| Method | Endpoint         | Description                                         |
-| ------ | ---------------- | --------------------------------------------------- |
-| `GET`  | `/api/constants` | Retrieve system constants and configuration values. |
-
----
+Licensed under CC BY-NC-SA 4.0. Developed by Ni Lang.

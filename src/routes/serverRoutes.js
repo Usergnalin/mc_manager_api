@@ -1,7 +1,7 @@
 import express from "express"
 const router = express.Router()
 import * as session_handler from "../middlewares/sessionHandler.js"
-import * as token_handler from "../middlewares/tokenHandler.js"
+import * as agent_auth_handler from "../middlewares/agentAuthHandler.js"
 import * as global_controller from "../controllers/globalController.js"
 import * as agent_controller from "../controllers/agentController.js"
 import * as server_controller from "../controllers/serverController.js"
@@ -9,7 +9,7 @@ import * as server_controller from "../controllers/serverController.js"
 // Create new server (agent)
 router.post(
     "/",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     global_controller.load_body_data({
         fields: ["server_id", "server_name", "properties"],
         data_path: "server_data",
@@ -21,7 +21,7 @@ router.post(
 // Update server status (agent)
 router.put(
     "/:server_id/status",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     global_controller.load_param_data({ field: "server_id", data_path: "server_id" }),
     global_controller.load_body_data({ fields: ["status"], data_path: "server_data" }),
     server_controller.check_access_by_agent_id(),
@@ -32,7 +32,7 @@ router.put(
 // Update server properties (agent)
 router.put(
     "/:server_id/properties/agent",
-    token_handler.verify_token({ id_path: "agent_id" }),
+    agent_auth_handler.verify_agent_token(),
     global_controller.load_param_data({ field: "server_id", data_path: "server_id" }),
     global_controller.load_body_data({ fields: ["properties"], data_path: "server_data" }),
     server_controller.check_access_by_agent_id(),

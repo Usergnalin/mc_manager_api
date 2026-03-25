@@ -1,6 +1,5 @@
 import express from "express"
 const router = express.Router()
-import * as token_handler from "../middlewares/tokenHandler.js"
 import * as nonce_handler from "../middlewares/nonceHandler.js"
 import * as session_handler from "../middlewares/sessionHandler.js"
 import * as agent_auth_handler from "../middlewares/agentAuthHandler.js"
@@ -37,7 +36,7 @@ router.get(
     global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
     agent_controller.get_by_agent_id({ fields: ["public_key"] }),
     agent_auth_handler.verify_signature(),
-    token_handler.generate_token({ id_path: "agent_id" }),
+    agent_auth_handler.generate_agent_token(),
 )
 
 // Get agents by team id (user)
@@ -61,6 +60,15 @@ router.get(
     agent_controller.stream_agent_by_team_id({
         fields: ["agent_id", "agent_name", "agent_status", "updated_at"],
     }),
+)
+
+// Update agent by agent id (agent)
+router.put(
+    "/",
+    agent_auth_handler.verify_agent_token(),
+    global_controller.load_body_data({ fields: ["agent_status"], data_path: "agent_data" }),
+    agent_controller.update_by_agent_id({ fields: ["agent_status"] }),
+    global_controller.send_empty()
 )
 
 export default router

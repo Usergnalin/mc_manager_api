@@ -1,6 +1,6 @@
 import { get_path } from "../utils.js"
 import { validate as validate_uuid } from "uuid"
-import { SERVER_STATUS, COMMAND_STATUS } from "../configs/constants.js"
+import { SERVER_STATUS, COMMAND_STATUS, AGENT_STATUS } from "../configs/constants.js"
 
 // === Request handlers ===
 
@@ -104,6 +104,12 @@ const validation_logic = {
         if (typeof value !== "string") return null
         const trimmed = value.trim().toLowerCase()
         if (!COMMAND_STATUS.includes(trimmed)) return null
+        return trimmed
+    },
+    agent_status: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim().toLowerCase()
+        if (!AGENT_STATUS.includes(trimmed)) return null
         return trimmed
     },
 }
