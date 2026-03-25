@@ -7,6 +7,7 @@ export const TEAM_ROLES = ["user", "admin"]
 export const SSE_HEARTBEAT_INTERVAL = "20s"
 export const AGENT_HEARTBEAT_EXPIRY = "30s"
 export const SLUG_LENGTH = 5
+export const MODRINTH_USER_AGENT = "Usergnalin/mc_manager_api (usernilang@gmail.com)"
 
 export const CONSTANTS = {
     MAX_INT_UNSIGNED,
@@ -18,6 +19,7 @@ export const CONSTANTS = {
     SSE_HEARTBEAT_INTERVAL,
     AGENT_HEARTBEAT_EXPIRY,
     SLUG_LENGTH,
+    MODRINTH_USER_AGENT
 }
 
 export const read_constants = (req, res, next) => {

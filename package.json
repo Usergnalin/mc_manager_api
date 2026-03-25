@@ -1,8 +1,8 @@
 {
-    "name": "bed_ca2_nilang",
+    "name": "mc_manager_api",
     "version": "1.1.0",
     "main": "index.js",
-    "author": "nlang.25@ichat.sp.edu.sg p2508597 DAAA/FT/1B/02",
+    "author": "Ni Lang usernilang@gmail.com",
     "type": "module",
     "scripts": {
         "init_tables": "dotenv -e .env -- node src/configs/initTables.js",
@@ -13,9 +13,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/ST0503-BED/bed-ca1-Usergnalin"
+        "url": "https://github.com/Usergnalin/mc_manager_api"
     },
-    "license": "CC BY-NC-SA 4.0",
+    "license": "Apache-2.0",
     "dependencies": {
         "bcrypt": "^6.0.0",
         "bootstrap": "^5.3.8",
