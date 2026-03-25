@@ -3,6 +3,7 @@ import { redis_client, initialise_redis } from "../services/redis.js"
 import { COMMAND_STATUS, SERVER_STATUS, AGENT_STATUS, TEAM_ROLES } from "../configs/constants.js"
 
 const SQLSTATEMENT = `
+DROP TABLE IF EXISTS Mods;
 DROP TABLE IF EXISTS Session;
 DROP TABLE IF EXISTS UserTeam;
 DROP TABLE IF EXISTS Command;
@@ -84,6 +85,14 @@ CREATE TABLE Server (
   created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
   updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   FOREIGN KEY (agent_id) REFERENCES Agent(agent_id) ON DELETE CASCADE
+);
+
+CREATE TABLE Mods (
+  mod_id BINARY(16) PRIMARY KEY,
+  server_id BINARY(16) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+  FOREIGN KEY (server_id) REFERENCES Server(server_id) ON DELETE CASCADE
 );
 `
 

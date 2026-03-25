@@ -36,39 +36,19 @@ export const check_access_by_agent_id = (data, callback) => {
     pool.query(statement, values, callback)
 }
 
-export const check_access_by_user_id = (data, callback) => {
+export const check_access_by_user_id_and_role = (data, callback) => {
     const statement = `
     SELECT EXISTS (
-        SELECT 1
-        FROM UserTeam
-        JOIN Agent ON UserTeam.team_id = Agent.team_id
-        JOIN Server ON Agent.agent_id = Server.agent_id
-        WHERE UserTeam.user_id = UUID_TO_BIN(?)
-        AND Server.server_id = UUID_TO_BIN(?)
+        SELECT 1 
+        FROM Server
+        JOIN Agent ON Server.agent_id = Agent.agent_id
+        JOIN UserTeam ON Agent.team_id = UserTeam.team_id
+        WHERE Server.server_id = UUID_TO_BIN(?)
+            AND UserTeam.user_id = UUID_TO_BIN(?)
+            AND UserTeam.role IN (?)
     ) AS has_access
     `
-    const values = [data.user_id, data.server_id]
-    pool.query(statement, values, callback)
-}
-
-export const update_by_id = (data, columns, callback) => {
-    const fields = []
-    const values = []
-    columns.forEach((column) => {
-        if (data[column] !== undefined) {
-            if (column === "properties") {
-                data[column] = JSON.stringify(data[column])
-            }
-            fields.push(`${column} = ?`)
-            values.push(data[column])
-        }
-    })
-    const statement = `
-        UPDATE Server
-        SET ${fields.join(", ")}
-        WHERE server_id = UUID_TO_BIN(?)
-    `
-    values.push(data.server_id)
+    const values = [data.server_id, data.user_id, data.role]
     pool.query(statement, values, callback)
 }
 

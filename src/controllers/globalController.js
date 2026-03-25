@@ -112,29 +112,84 @@ const validation_logic = {
         if (!AGENT_STATUS.includes(trimmed)) return null
         return trimmed
     },
+    mod_id: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return validate_uuid(trimmed) ? trimmed : null
+    },
+    file_name: (value) => {
+        if (typeof value !== "string") return null
+        const trimmed = value.trim()
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
+    },
 }
 
-export const load_body_data = ({ fields, data_path } = {}) => {
+// export const load_body_data = ({ fields, data_path } = {}) => {
+//     return (req, res, next) => {
+//         if (req.body === undefined) {
+//             return res.status(422).json({ message: "Missing body" })
+//         }
+//         res.locals[data_path] = res.locals[data_path] || {}
+//         for (const field of fields) {
+//             const raw_value = req.body[field]
+//             if (raw_value === undefined) {
+//                 return res.status(422).json({ message: `Missing ${field}` })
+//             }
+//             if (!validation_logic[field]) {
+//                 console.error(`No validation logic for field "${field}"`)
+//                 return res.status(500).json({ message: "Internal server error" })
+//             }
+//             const validated_value = validation_logic[field](raw_value)
+//             if (validated_value === null) {
+//                 return res.status(400).json({ message: `Invalid ${field}` })
+//             }
+//             res.locals[data_path][field] = validated_value
+//         }
+//         next()
+//     }
+// }
+
+export const load_body_data = ({ fields, data_path, bulk = false } = {}) => {
     return (req, res, next) => {
         if (req.body === undefined) {
             return res.status(422).json({ message: "Missing body" })
         }
-        res.locals[data_path] = res.locals[data_path] || {}
-        for (const field of fields) {
-            const raw_value = req.body[field]
-            if (raw_value === undefined) {
-                return res.status(422).json({ message: `Missing ${field}` })
-            }
-            if (!validation_logic[field]) {
-                console.error(`No validation logic for field "${field}"`)
-                return res.status(500).json({ message: "Internal server error" })
-            }
-            const validated_value = validation_logic[field](raw_value)
-            if (validated_value === null) {
-                return res.status(400).json({ message: `Invalid ${field}` })
-            }
-            res.locals[data_path][field] = validated_value
+
+        const is_input_array = Array.isArray(req.body)
+
+        if (is_input_array && !bulk) {
+            return res.status(400).json({ message: "Bulk data not allowed" })
         }
+        if (!is_input_array && bulk) {
+            return res.status(400).json({ message: "Array of items expected" })
+        }
+
+        const items = is_input_array ? req.body : [req.body]
+        const validated_items = []
+
+        for (const [index, item] of items.entries()) {
+            const current_validated = {}
+            for (const field of fields) {
+                const raw_value = item[field]
+                
+                if (raw_value === undefined) {
+                    return res.status(422).json({ 
+                        message: bulk ? `Item ${index}: Missing ${field}` : `Missing ${field}` 
+                    })
+                }
+
+                const validated_value = validation_logic[field](raw_value)
+                if (validated_value === null) {
+                    return res.status(400).json({ 
+                        message: bulk ? `Item ${index}: Invalid ${field}` : `Invalid ${field}` 
+                    })
+                }
+                current_validated[field] = validated_value
+            }
+            validated_items.push(current_validated)
+        }
+
+        res.locals[data_path] = bulk ? validated_items : validated_items[0]
         next()
     }
 }

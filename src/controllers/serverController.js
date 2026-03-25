@@ -160,9 +160,10 @@ export const check_access_by_agent_id = ({
     }
 }
 
-export const check_access_by_user_id = ({
+export const check_access_by_user_id_and_role = ({
     server_id_path = "server_id",
     user_id_path = "user_id",
+    role = [],
 } = {}) => {
     return (req, res, next) => {
         const server_id = get_path(res, server_id_path)
@@ -171,9 +172,9 @@ export const check_access_by_user_id = ({
             console.error("No data found at path(s):", server_id_path, user_id_path)
             return res.status(500).json({ message: "Internal server error" })
         }
-        server_model.check_access_by_user_id({ user_id, server_id }, (error, results) => {
+        server_model.check_access_by_user_id_and_role({ user_id, server_id, role }, (error, results) => {
             if (error) {
-                console.error("Error server_model check_access_by_user_id:", error)
+                console.error("Error server_model check_access_by_user_id_and_role:", error)
                 return res.status(500).json({ message: "Internal server error" })
             }
             if (results[0].has_access === 0) {

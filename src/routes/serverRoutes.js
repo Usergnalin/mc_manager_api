@@ -45,7 +45,7 @@ router.get(
     "/:server_id",
     session_handler.verify_session_token(),
     global_controller.load_param_data({ field: "server_id", data_path: "server_id" }),
-    server_controller.check_access_by_user_id(),
+    server_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
     server_controller.get_server_by_id({ fields: ["server_name", "properties", "status"] }),
     global_controller.send_data({ data_path: "server_data" }),
 )
