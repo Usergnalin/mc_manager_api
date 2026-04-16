@@ -1,27 +1,15 @@
-import crypto from "node:crypto"
-import ms from "ms"
-import { MAX_INT_UNSIGNED, SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL } from "./configs/constants.js"
-import { predicates, objects } from "friendly-words"
-import { redis_client } from "./services/redis.js"
+import crypto from 'node:crypto'
+import ms from 'ms'
+import logger from './services/logger.js'
+import {SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL} from './configs/constants.js'
+import {predicates, objects} from 'friendly-words'
+import {redis_client} from './services/redis.js'
 
 const sse_heartbeat_interval = ms(SSE_HEARTBEAT_INTERVAL)
 
-export const is_unsigned_int = (value) => {
-    const parsed_value = Number(value)
-    if (value === "" || value === null || value === undefined) {
-        return false
-    }
-    return (
-        Number.isInteger(parsed_value) &&
-        Number.isSafeInteger(parsed_value) &&
-        parsed_value >= 0 &&
-        parsed_value <= MAX_INT_UNSIGNED
-    )
-}
-
 export const generate_slug = () => {
-    const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
-    let result = ""
+    const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+    let result = ''
     const random_bytes = crypto.randomBytes(SLUG_LENGTH)
     for (let i = 0; i < SLUG_LENGTH; i++) {
         result += alphabet.charAt(random_bytes[i] % alphabet.length)
@@ -38,20 +26,24 @@ export const generate_phrase = () => {
 }
 
 export const get_path = (res, path) => {
-    if (path === undefined || path === null || typeof path !== "string") return undefined
-
-    return path.split(".").reduce((accumulator, property) => {
+    const result = path.split('.').reduce((accumulator, property) => {
         if (accumulator && accumulator[property] !== undefined) {
             return accumulator[property]
         }
         return undefined
     }, res.locals)
+
+    if (result === undefined) {
+        throw new Error(`Invalid data path: ${path}`)
+    }
+
+    return result
 }
 
 export const set_path = (res, path, value) => {
-    if (path === undefined || path === null || typeof path !== "string") return
+    if (path === undefined || path === null || typeof path !== 'string') return
 
-    const properties = path.split(".")
+    const properties = path.split('.')
     const last_property = properties.pop()
 
     const target_object = properties.reduce((accumulator, property) => {
@@ -73,54 +65,62 @@ export const filter_object = (object, allowed_keys) => {
     }, {})
 }
 
-export const create_stream = (res, { on_heartbeat, on_close, session_expiry, session_id }) => {
+export const create_stream = (res, {on_heartbeat, on_close, session_expiry, session_id}) => {
     let is_stopped = false
 
     res.writeHead(200, {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache, no-transform",
-        Connection: "keep-alive",
-        "X-Accel-Buffering": "no",
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
     })
 
     const stop = () => {
         if (is_stopped) return
         is_stopped = true
-
         clearInterval(heartbeat_timer)
-        if (typeof on_close === "function") on_close()
+        on_close()
         if (!res.writableEnded) res.end()
     }
 
-    const perform_heartbeat = () => {
+    const perform_heartbeat = async () => {
         if (is_stopped) return
+
         if (session_expiry && Date.now() > session_expiry) {
             if (res.writable) res.write(`data: {"message": "Session expired"}\n\n`)
             return stop()
         }
+
         if (session_id) {
-            redis_client.exists(`revoked_session:${session_id}`).then((revoked) => {
+            try {
+                const revoked = await redis_client.exists(`revoked_session:${session_id}`)
+
                 if (revoked) {
                     if (res.writable) res.write(`data: {"message": "Session expired"}\n\n`)
                     return stop()
                 }
-                if (res.writable && res.write(": keep-alive\n\n")) {
-                    if (typeof on_heartbeat === "function") on_heartbeat(stop)
+
+                if (res.writable && res.write(': keep-alive\n\n')) {
+                    if (typeof on_heartbeat === 'function') on_heartbeat(stop)
                 } else {
                     stop()
                 }
-            }).catch((error) => {
-                console.error("Redis error:", error)
+            } catch (err) {
+                logger.error({err, session_id}, 'Redis error during SSE heartbeat')
                 stop()
-            })
+            }
+        } else {
+            if (res.writable && res.write(': keep-alive\n\n')) {
+                if (typeof on_heartbeat === 'function') on_heartbeat(stop)
+            } else {
+                stop()
+            }
         }
-        
     }
 
     perform_heartbeat()
     const heartbeat_timer = setInterval(perform_heartbeat, sse_heartbeat_interval)
-
-    res.on("close", stop)
+    res.on('close', stop)
 
     return {
         send: (data) => {
@@ -129,4 +129,25 @@ export const create_stream = (res, { on_heartbeat, on_close, session_expiry, ses
         },
         stop,
     }
+}
+
+const special_formats_select = {
+    user_id: (prefix) => `BIN_TO_UUID(${prefix}user_id) AS user_id`,
+    agent_id: (prefix) => `BIN_TO_UUID(${prefix}agent_id) AS agent_id`,
+    module_id: (prefix) => `BIN_TO_UUID(${prefix}module_id) AS module_id`,
+    team_id: (prefix) => `BIN_TO_UUID(${prefix}team_id) AS team_id`,
+    server_id: (prefix) => `BIN_TO_UUID(${prefix}server_id) AS server_id`,
+    session_id: (prefix) => `BIN_TO_UUID(${prefix}session_id) AS session_id`,
+    command_id: (prefix) => `BIN_TO_UUID(${prefix}command_id) AS command_id`,
+}
+
+export const format_columns_select = (columns, prefix = '') => {
+    const formatted_prefix = prefix ? `${prefix}.` : ''
+    const formatted_columns = columns.map((column) => {
+        if (special_formats_select[column]) {
+            return special_formats_select[column](formatted_prefix)
+        }
+        return `${formatted_prefix}${column}`
+    })
+    return formatted_columns.join(', ')
 }

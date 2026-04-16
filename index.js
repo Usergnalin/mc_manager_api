@@ -1,32 +1,17 @@
-//////////////////////////////////////////////////////
-// INCLUDES
-//////////////////////////////////////////////////////
-import app from "./src/app.js"
-import { initialise_redis } from "./src/services/redis.js"
-import agent_startup from "./src/startup/agentStatus.js"
+import logger from './src/services/logger.js'
+import {initialise_redis} from './src/services/redis.js'
+import agent_startup from './src/startup/agentStatus.js'
 
-//////////////////////////////////////////////////////
-// SETUP ENVIRONMENT
-//////////////////////////////////////////////////////
-const PORT = 3000
+const app_port = process.env.APP_PORT
 
-//////////////////////////////////////////////////////
-// START SERVER
-//////////////////////////////////////////////////////
 const start_server = async () => {
     try {
         await initialise_redis()
-        console.log("Redis Connected")
-
-        agent_startup((error, results) => {
-            if (error) {
-                console.error("Cleanup failed", error)
-                process.exit(1)
-            }
-            app.listen(PORT, () => console.log("Server Live"))
-        })
+        await agent_startup()
+        const { default: app } = await import('./src/app.js')
+        app.listen(app_port, () => logger.info({port: app_port}, 'Server successfully started'))
     } catch (error) {
-        console.error("Startup Error:", error)
+        logger.fatal({err: error}, 'Failed to start server')
         process.exit(1)
     }
 }

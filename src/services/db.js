@@ -1,13 +1,13 @@
-import mysql from "mysql2"
+import mysql from 'mysql2/promise'
 
 const setting = {
-    connectionLimit: 10, //set limit to 10 connection
-    host: process.env.DB_HOST, //get host from environment variable
-    user: process.env.DB_USER, //get user from environment variable
-    password: process.env.DB_PASSWORD, //get password from environment variable
-    database: process.env.DB_DATABASE, //get database from environment variable
-    multipleStatements: true, //allow multiple sql statements
-    dateStrings: true, //return date as string instead of Date object
+    connectionLimit: 100,
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    multipleStatements: true,
+    dateStrings: true,
 }
 
 const pool = mysql.createPool(setting)

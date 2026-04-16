@@ -1,24 +1,42 @@
-import pool from "../services/db.js"
-import { v7 as uuid } from "uuid"
-import { generate_slug } from "../utils.js"
+import pool from '../services/db.js'
+import {v7 as uuid} from 'uuid'
+import {generate_slug} from '../utils.js'
 
-export const insert_single = (data, callback) => {
-    const statement = `
-    START TRANSACTION;
-    INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?);
-    INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?);
-    COMMIT;
-    `
-    const team_id = uuid()
-    const slug = generate_slug()
-    const values = [team_id, data.team_name, slug, data.user_id, team_id, "admin"]
-    pool.query(statement, values, (error, results) => {
-        if (results) {
-            results.team_id = team_id
-            results.slug = slug
-        }
-        callback(error, results)
-    })
+// export const insert_single = (data, callback) => {
+//     const statement = `
+//     START TRANSACTION;
+//     INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?);
+//     INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?);
+//     COMMIT;
+//     `
+//     const team_id = uuid()
+//     const slug = generate_slug()
+//     const values = [team_id, data.team_name, slug, data.user_id, team_id, 'admin']
+//     pool.query(statement, values, (error, results) => {
+//         if (results) {
+//             results.team_id = team_id
+//             results.slug = slug
+//         }
+//         callback(error, results)
+//     })
+// }
+
+export const insert_single = async (user_id, data) => {
+    const connection = await pool.getConnection()
+    try {
+        const team_id = uuid()
+        const slug = generate_slug()
+        await connection.beginTransaction()
+        await connection.query(`INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?)`, [team_id, data.team_name, slug])
+        await connection.query(`INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`, [user_id, team_id, 'admin'])
+        await connection.commit()
+        return {team_id, slug}
+    } catch (error) {
+        await connection.rollback()
+        throw error
+    } finally {
+        connection.release()
+    }
 }
 
 // module.exports.get_teams_by_user_id = (data, columns, callback) => {
@@ -36,16 +54,24 @@ export const insert_single = (data, callback) => {
 //     pool.query(statement, values, callback)
 // }
 
-export const check_access_by_user_id_and_role = (data, callback) => {
-    const statement = `
-        SELECT EXISTS (
+export const check_access_by_user_id_and_role = async (user_id, team_id, role) => {
+    const results = await pool.query(
+        `
+        SELECT
+        EXISTS (
+            SELECT 1 FROM User WHERE user_id = UUID_TO_BIN(?)
+        ) AS user_exists,
+        EXISTS (
+            SELECT 1 FROM Team WHERE team_id = UUID_TO_BIN(?)
+        ) AS team_exists,
+        EXISTS (
             SELECT 1 
             FROM UserTeam
             WHERE user_id = UUID_TO_BIN(?)
               AND team_id = UUID_TO_BIN(?)
               AND role IN (?)
-        ) AS has_access
-    `
-    const values = [data.user_id, data.team_id, data.role]
-    pool.query(statement, values, callback)
+        ) AS has_access`,
+        [user_id, team_id, user_id, team_id, role],
+    )
+    return results[0][0]
 }

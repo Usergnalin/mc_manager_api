@@ -1,69 +1,87 @@
-import express from "express"
+import express from 'express'
 const router = express.Router()
-import * as agent_auth_handler from "../middlewares/agentAuthHandler.js"
-import * as session_handler from "../middlewares/sessionHandler.js"
-import * as global_controller from "../controllers/globalController.js"
-import * as agent_controller from "../controllers/agentController.js"
-import * as command_controller from "../controllers/commandController.js"
+import * as rate_limiter from '../services/rateLimiter.js'
+import * as agent_auth_handler from '../middlewares/agentAuthHandler.js'
+import * as session_handler from '../middlewares/sessionHandler.js'
+import * as global_controller from '../controllers/globalController.js'
+import * as agent_controller from '../controllers/agentController.js'
+import * as command_controller from '../controllers/commandController.js'
 
 // Create new command (user)
 router.post(
-    "/:agent_id",
+    '/:agent_id',
+    rate_limiter.fast,
     session_handler.verify_session_token(),
-    global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
-    global_controller.load_body_data({ fields: ["command"], data_path: "command_data" }),
-    agent_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
+    global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
+    global_controller.load_body_data({fields: ['command'], data_path: 'command_data'}),
+    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     command_controller.create_command(),
-    global_controller.send_data({ data_path: "command_data" }),
+    global_controller.send_data({data_path: 'command_data'}),
 )
 
 // Get all commands by agent id and mark sent (agent)
 router.get(
-    "/:agent_id",
+    '/:agent_id',
+    rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
-    command_controller.get_command_by_agent_id_and_mark_sent({ fields: ["command_id", "command"] }),
-    global_controller.send_data({ data_path: "command_data" }),
+    command_controller.get_command_by_agent_id_and_mark_sent({fields: ['command_id', 'command']}),
+    global_controller.send_data({data_path: 'command_data'}),
 )
 
 // Stream queued commands by agent id and mark sent (agent)
 router.get(
-    "/:agent_id/stream",
+    '/:agent_id/stream',
+    rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
     command_controller.stream_command_by_agent_id_and_mark_sent({
-        fields: ["command_id", "command"],
+        fields: ['command_id', 'command'],
     }),
 )
 
 // Get commands details by agent id (user)
 router.get(
-    "/agent/:agent_id",
+    '/agent/:agent_id',
+    rate_limiter.normal,
     session_handler.verify_session_token(),
-    global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
-    agent_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
+    global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
+    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     command_controller.get_command_by_agent_id({
-        fields: ["command_id", "command", "command_status", "created_at", "updated_at"],
+        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback'],
     }),
-    global_controller.send_data({ data_path: "command_data" }),
+    global_controller.send_data({data_path: 'command_data'}),
 )
 
 // Stream commands by agent id (user)
 router.get(
-    "/agent/:agent_id/stream",
+    '/agent/:agent_id/stream',
+    rate_limiter.normal,
     session_handler.verify_session_token(),
-    global_controller.load_param_data({ field: "agent_id", data_path: "agent_id" }),
-    agent_controller.check_access_by_user_id_and_role({ role: ["admin", "user"] }),
+    global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
+    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     command_controller.stream_command_by_agent_id({
-        fields: ["command_id", "command", "command_status", "created_at", "updated_at"],
+        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback'],
     }),
 )
 
 // Update command status (agent)
 router.put(
-    "/:command_id/status",
+    '/:command_id/status',
+    rate_limiter.fast,
     agent_auth_handler.verify_agent_token(),
-    global_controller.load_param_data({ field: "command_id", data_path: "command_id" }),
-    global_controller.load_body_data({ fields: ["command_status"], data_path: "command_data" }),
-    command_controller.update_by_command_id({ fields: ["command_status"] }),
+    global_controller.load_param_data({field: 'command_id', data_path: 'command_id'}),
+    global_controller.load_body_data({fields: ['command_status'], data_path: 'command_data'}),
+    command_controller.update_by_command_id({fields: ['command_status']}),
+    global_controller.send_empty(),
+)
+
+// Update command feedback (agent)
+router.put(
+    '/:command_id/feedback',
+    rate_limiter.fast,
+    agent_auth_handler.verify_agent_token(),
+    global_controller.load_param_data({field: 'command_id', data_path: 'command_id'}),
+    global_controller.load_body_data({fields: ['command_feedback'], data_path: 'command_data'}),
+    command_controller.update_by_command_id({fields: ['command_feedback']}),
     global_controller.send_empty(),
 )
 

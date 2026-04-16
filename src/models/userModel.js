@@ -1,82 +1,97 @@
-import pool from "../services/db.js"
-import { v7 as uuid } from "uuid"
-import { generate_slug } from "../utils.js"
+import pool from '../services/db.js'
+import {v7 as uuid} from 'uuid'
+import {generate_slug, format_columns_select} from '../utils.js'
 
-export const insert_single = (data, callback) => {
-    const statement = `
-    START TRANSACTION;
-    INSERT INTO User (user_id, username, password) VALUES (UUID_TO_BIN(?), ?, ?);
-    INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?);
-    INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?);
-    COMMIT;
-    `
-    const team_id = uuid()
-    const user_id = uuid()
-    const slug = generate_slug()
-    const team_name = `${data.username}'s Team`
-    const values = [
-        user_id,
-        data.username,
-        data.password,
-        team_id,
-        team_name,
-        slug,
-        user_id,
-        team_id,
-        "admin",
-    ]
-    pool.query(statement, values, (error, results) => {
-        if (results) {
-            results.user_id = user_id
-            results.team_id = team_id
-            results.slug = slug
+export const insert_single = async (data) => {
+    const connection = await pool.getConnection()
+    try {
+        const {username, password} = data
+        const user_id = uuid()
+        const team_id = uuid()
+        const slug = generate_slug()
+        const team_name = `${username}'s Team`
+        await connection.beginTransaction()
+        await connection.query(
+            `INSERT INTO User (user_id, username, password)
+            VALUES (UUID_TO_BIN(?), ?, ?)`,
+            [user_id, username, password],
+        )
+        await connection.query(
+            `INSERT INTO Team (team_id, team_name, slug)
+            VALUES (UUID_TO_BIN(?), ?, ?)`,
+            [team_id, team_name, slug],
+        )
+        await connection.query(
+            `INSERT INTO UserTeam (user_id, team_id, role)
+            VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+            [user_id, team_id, 'admin'],
+        )
+        await connection.commit()
+        return {user_id, team_id, slug}
+    } catch (error) {
+        await connection.rollback()
+        throw error
+    } finally {
+        connection.release()
+    }
+}
+
+export const select_by_user_id_with_team = async (user_id, user_columns, user_team_columns, team_columns) => {
+    const [rows] = await pool.query(
+        `SELECT ${format_columns_select(user_columns, 'User')}, ${format_columns_select(user_team_columns, 'UserTeam')}, ${format_columns_select(team_columns, 'Team')}
+        FROM User
+        LEFT JOIN UserTeam ON User.user_id = UserTeam.user_id
+        LEFT JOIN Team ON UserTeam.team_id = Team.team_id
+        WHERE User.user_id = UUID_TO_BIN(?)`,
+        [user_id],
+    )
+    if (rows.length === 0) return null
+
+    const user = {}
+    user_columns.forEach(column => {
+        user[column] = rows[0][column]
+    })
+    
+    user.teams = []
+
+    rows.forEach(row => {
+        if (row.team_id) {
+            const team_data = {}
+            user_team_columns.forEach(column => {
+                team_data[column] = row[column]
+            })
+            team_columns.forEach(column => {
+                team_data[column] = row[column]
+            })
+            user.teams.push(team_data)
         }
-        callback(error, results)
     })
+
+    return user
 }
 
-export const select_by_id = (data, columns, callback) => {
-    const formatted_columns = columns.map((column) => {
-        if (column === "user_id") return "BIN_TO_UUID(user_id) AS user_id"
-        return column
-    })
-    const statement = `
-    SELECT ${formatted_columns.join(", ")}
-    FROM User
-    WHERE user_id = UUID_TO_BIN(?)
-    `
-    const values = [data.user_id]
-    pool.query(statement, values, callback)
+export const select_by_username = async (username, columns) => {
+    const [rows] = await pool.query(
+        `SELECT ${format_columns_select(columns)}
+        FROM User
+        WHERE username = ?`,
+        [username],
+    )
+    return rows[0]
 }
 
-export const select_by_username = (data, columns, callback) => {
-    const formatted_columns = columns.map((column) => {
-        if (column === "user_id") return "BIN_TO_UUID(user_id) AS user_id"
-        return column
-    })
-    const statement = `
-    SELECT ${formatted_columns.join(", ")}
-    FROM User
-    WHERE username = ?
-    `
-    const values = [data.username]
-    pool.query(statement, values, callback)
-}
-
-export const update_by_id = (data, columns, callback) => {
+export const update_by_user_id = async (user_id, data, columns) => {
     const fields = []
     const values = []
     columns.forEach((column) => {
-        if (data[column] !== undefined) {
-            fields.push(`${column} = ?`)
-            values.push(data[column])
-        }
+        fields.push(`${column} = ?`)
+        values.push(data[column])
     })
     const statement = `
         UPDATE User
-        SET ${fields.join(", ")}
+        SET ${fields.join(', ')}
         WHERE user_id = UUID_TO_BIN(?)
     `
-    values.push(data.user_id)
-    pool.query(statement, values, callback)
+    values.push(user_id)
+    return await pool.query(statement, values)
 }

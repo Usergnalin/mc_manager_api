@@ -1,27 +1,82 @@
-export const MAX_INT_UNSIGNED = 4294967295
+// --- DB allowed enums ---
+
+export const COMMAND_STATUS = ['pending', 'queued', 'sent', 'success', 'failure']
+export const SERVER_STATUS = ['online', 'offline', 'starting', 'stopping']
+export const AGENT_STATUS = ['online', 'offline']
+export const TEAM_ROLES = ['user', 'admin']
+export const MODULE_TYPES = ['mod', 'resource_pack', 'data_pack', 'plugin']
+
+// --- Security ---
+
+// User refresh token duration before needing login
+export const USER_REFRESH_TOKEN_DURATION = '30d'
+// Period of time before a refresh token reuse would not trigger a breach event
+export const USER_REFRESH_TOKEN_GRACE_PERIOD = '30s'
+// User session token duration before needing to refresh token
+export const USER_TOKEN_DURATION = '60m'
+// Agent session token before requiring agent signature
+export const AGENT_TOKEN_DURATION = '120m'
+// JWT token signing algorithm for session and refresh tokens
+export const TOKEN_ALGORITHM = 'HS256'
+// Number of salt rounds for hashing passwords, increases time to hash
+export const SALT_ROUNDS = 10
+// Toggle https requirement of cookies
+export const SECURE_COOKIE = true
+// Minimum zxcvbn password score accepted
 export const PASSWORD_MIN_SCORE = 2
-export const COMMAND_STATUS = ["pending", "queued", "sent", "success", "failure"]
-export const SERVER_STATUS = ["online", "offline", "starting", "stopping"]
-export const AGENT_STATUS = ["online", "offline"]
-export const TEAM_ROLES = ["user", "admin"]
-export const SSE_HEARTBEAT_INTERVAL = "20s"
-export const AGENT_HEARTBEAT_EXPIRY = "30s"
+
+// --- SSE streams ---
+
+// Period of keep alive in sse streams
+export const SSE_HEARTBEAT_INTERVAL = '40s'
+// Time after last keep alive where a agent would be marked offline
+export const AGENT_HEARTBEAT_EXPIRY = '60s'
+
+// -- Rate Limits ---
+export const RATE_LIMIT = {
+    slow: {window: "10m", limit: 50},
+    normal: {window: "5m", limit: 100},
+    fast: {window: "1m", limit: 100}
+}
+
+// --- Other configurables ---
+
+// Character length of team slugs
 export const SLUG_LENGTH = 5
-export const MODRINTH_USER_AGENT = "Usergnalin/mc_manager_api (usernilang@gmail.com)"
+// User Agent for use in modrinth api calls
+export const MODRINTH_USER_AGENT = 'Usergnalin/mc_manager_api (usernilang@gmail.com)'
+// Time before a team agent linking code expires
+export const LINKING_CODE_EXPIRY = '30m'
+// Period of time where nonces are kept, nonces older than this are rejected
+export const NONCE_MAX_DURATION = '1m'
 
 export const CONSTANTS = {
-    MAX_INT_UNSIGNED,
-    PASSWORD_MIN_SCORE,
     COMMAND_STATUS,
     SERVER_STATUS,
     AGENT_STATUS,
     TEAM_ROLES,
+    USER_REFRESH_TOKEN_DURATION,
+    USER_REFRESH_TOKEN_GRACE_PERIOD,
+    USER_TOKEN_DURATION,
+    AGENT_TOKEN_DURATION,
+    TOKEN_ALGORITHM,
+    SALT_ROUNDS,
+    SECURE_COOKIE,
+    PASSWORD_MIN_SCORE,
     SSE_HEARTBEAT_INTERVAL,
     AGENT_HEARTBEAT_EXPIRY,
     SLUG_LENGTH,
-    MODRINTH_USER_AGENT
+    MODRINTH_USER_AGENT,
+    LINKING_CODE_EXPIRY,
+    NONCE_MAX_DURATION,
+    RATE_LIMIT,
+    MODULE_TYPES,
 }
 
-export const read_constants = (req, res, next) => {
-    return res.status(200).json(CONSTANTS)
+export const read_constants = async (req, res, next) => {
+    try {
+        return res.status(200).json(CONSTANTS)
+    } catch (error) {
+        next(error)
+    }
 }
