@@ -1,5 +1,6 @@
 import {get_path} from '../utils.js'
 import {validate as validate_uuid} from 'uuid'
+import logger from '../services/logger.js'
 import {SERVER_STATUS, COMMAND_STATUS, AGENT_STATUS, MODULE_TYPES} from '../configs/constants.js'
 
 // === Request handlers ===
@@ -148,10 +149,12 @@ const validation_logic = {
         return trimmed.length > 0 && trimmed.length <= 32768 ? trimmed : null
     },
     logs_start_line: (value) => {
-        return Number.isSafeInteger(value) ? value : null
+        const parsed_value = parseInt(value)
+        return Number.isSafeInteger(parsed_value) ? parsed_value : null
     },
     logs_end_line: (value) => {
-        return Number.isSafeInteger(value) ? value : null
+        const parsed_value = parseInt(value)
+        return Number.isSafeInteger(parsed_value) ? parsed_value : null
     },
     command_feedback: (value) => {
         if (typeof value !== 'string') return null
@@ -163,6 +166,22 @@ const validation_logic = {
         const trimmed = value.trim().toLowerCase()
         if (!MODULE_TYPES.includes(trimmed)) return null
         return trimmed
+    },
+    logs_history_lines: (value) => {
+        const parsed_value = parseInt(value)
+        return Number.isSafeInteger(parsed_value) ? parsed_value : null
+    },
+    module_enabled: (value) => {
+        const truthy = [true, 'true']
+        const falsy = [false, 'false']
+        if (truthy.includes(value)) return true
+        if (falsy.includes(value)) return false
+        return null
+    },
+    mc_version: (value) => {
+        if (typeof value !== 'string') return null
+        const trimmed = value.trim()
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
     },
 }
 export const load_body_data = ({fields, data_path, bulk = false} = {}) => {
@@ -216,15 +235,31 @@ export const load_body_data = ({fields, data_path, bulk = false} = {}) => {
 
 export const load_param_data = ({field, data_path} = {}) => {
     return async (req, res, next) => {
-        if (req.params === undefined) {
-            return res.status(422).json({message: 'Missing params'})
-        }
         const raw_value = req.params[field]
         if (raw_value === undefined) {
             return res.status(422).json({message: `Missing param: ${field}`})
         }
         if (!validation_logic[field]) {
-            console.error(`No validation logic for param "${field}"`)
+            logger.error({}, `No validation logic for url parameter: ${field}`)
+            return res.status(500).json({message: 'Internal server error'})
+        }
+        const validated_value = validation_logic[field](raw_value)
+        if (validated_value === null) {
+            return res.status(400).json({message: `Invalid ${field}`})
+        }
+        res.locals[data_path] = validated_value
+        next()
+    }
+}
+
+export const load_query_data = ({field, data_path, is_required = true} = {}) => {
+    return async (req, res, next) => {
+        const raw_value = req.query[field]
+        if (raw_value === undefined && is_required) {
+            return res.status(422).json({message: `Missing query param: ${field}`})
+        }
+        if (!validation_logic[field]) {
+            logger.error({}, `No validation logic for url query parameter: ${field}`)
             return res.status(500).json({message: 'Internal server error'})
         }
         const validated_value = validation_logic[field](raw_value)
@@ -239,14 +274,22 @@ export const load_param_data = ({field, data_path} = {}) => {
 // === Response handlers ===
 
 export const send_data = ({data_path, status_code = 200} = {}) => {
-    return async (req, res, _next) => {
-        const data = get_path(res, data_path)
-        res.status(status_code).json(data)
+    return async (req, res, next) => {
+        try {
+            const data = get_path(res, data_path)
+            res.status(status_code).json(data)
+        } catch (error) {
+            next(error)
+        }
     }
 }
 
 export const send_empty = () => {
-    return async (req, res, _next) => {
-        res.status(204).send()
+    return async (req, res, next) => {
+        try {
+            res.status(204).send()
+        } catch (error) {
+            next(error)
+        }
     }
 }

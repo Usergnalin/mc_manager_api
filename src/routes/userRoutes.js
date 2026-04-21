@@ -22,9 +22,9 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     user_controller.get_user_by_user_id_with_team({
-        user_fields: ['user_id', 'username', 'created_at'],
-        user_team_fields: ['role'],
-        team_fields: ['team_id', 'team_name', 'slug'],
+        user_fields: ['user_id', 'username', 'created_at', 'revision'],
+        user_team_fields: ['role', 'revision'],
+        team_fields: ['team_id', 'team_name', 'slug', 'revision'],
     }),
     global_controller.send_data({data_path: 'user_data'})
 )

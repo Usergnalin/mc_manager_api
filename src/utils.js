@@ -151,3 +151,26 @@ export const format_columns_select = (columns, prefix = '') => {
     })
     return formatted_columns.join(', ')
 }
+
+export const compare_versions = (a, b) => {
+    const parse = (v) => v.split(/[.-]/).map(part => /^\d+$/.test(part) ? parseInt(part, 10) : part);
+    const parts_a = parse(a)
+    const parts_b = parse(b)
+
+    for (let i = 0; i < Math.max(parts_a.length, parts_b.length); i++) {
+        const part_a = parts_a[i]
+        const part_b = parts_b[i]
+
+        if (part_a === undefined) return -1
+        if (part_b === undefined) return 1
+
+        if (typeof part_a === 'number' && typeof part_b === 'number') {
+            if (part_a !== part_b) return part_a - part_b
+        } 
+
+        else if (part_a !== part_b) {
+            return String(part_a).localeCompare(String(part_b))
+        }
+    }
+    return 0
+}

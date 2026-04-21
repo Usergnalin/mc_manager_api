@@ -16,7 +16,7 @@ export const create_command = ({command_data_path = 'command_data', agent_id_pat
             const agent_id = get_path(res, agent_id_path)
             const user_id = get_path(res, user_id_path)
             const results = await command_model.insert_single(agent_id, user_id, command_data)
-            set_path(res, output_command_data_path, results.data)
+            set_path(res, output_command_data_path, results)
             next()
         } catch (error) {
             next(error)

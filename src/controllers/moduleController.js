@@ -3,12 +3,12 @@ import {db_events} from '../services/events.js'
 import {get_path, set_path, create_stream, filter_object} from '../utils.js'
 import logger from '../services/logger.js'
 
-export const create_module = ({module_data_path = 'module_data', server_id_path = 'server_id', bulk = false} = {}) => {
+export const create_module = ({module_data_path = 'module_data', server_id_path = 'server_id'} = {}) => {
     return async (req, res, next) => {
         try {
             const module_data = get_path(res, module_data_path)
             const server_id = get_path(res, server_id_path)
-            await module_model.insert(module_data, server_id, bulk)
+            await module_model.insert(module_data, server_id)
             next()
         } catch (error) {
             next(error)
@@ -22,6 +22,22 @@ export const get_module_by_server_id = ({fields, server_id_path = 'server_id', o
             const server_id = get_path(res, server_id_path)
             const results = await module_model.select_by_server_id(server_id, fields)
             set_path(res, output_module_data_path, results)
+            next()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
+export const update_by_module_id = ({fields, module_id_path = 'module_id', module_data_path = 'module_data'} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const module_id = get_path(res, module_id_path)
+            const module_data = get_path(res, module_data_path)
+            const results = await module_model.update_by_module_id(module_id, module_data, fields)
+            if (results.affectedRows === 0) {
+                return res.status(404).json({message: 'Module not found'})
+            }
             next()
         } catch (error) {
             next(error)

@@ -21,53 +21,6 @@ export const delete_by_session_id = async (session_id) => {
     return
 }
 
-// export const delete_by_session_id = (data, callback) => {
-//     const statement = `
-//     DELETE FROM Session WHERE session_id = UUID_TO_BIN(?)
-//     `
-//     pool.query(statement, [data.session_id], (error, results) => {
-//         if (error) return callback(error, null)
-//         redis_client
-//             .set(`revoked_session:${data.session_id}`, 1, {EX: user_token_duration, NX: true})
-//             .then(() => {
-//                 callback(null, results)
-//             })
-//             .catch((redis_error) => {
-//                 console.error('Redis Error:', redis_error)
-//                 callback(null, results)
-//             })
-//     })
-// }
-
-// export const delete_by_user_id = (data, callback) => {
-//     const statement = `
-//     SELECT BIN_TO_UUID(session_id) as session_id FROM Session
-//     WHERE user_id = UUID_TO_BIN(?)
-//     FOR UPDATE;
-
-//     DELETE FROM Session WHERE user_id = UUID_TO_BIN(?);
-//     `
-//     pool.query(statement, [data.user_id, data.user_id], (error, results) => {
-//         if (error) return callback(error, null)
-//         const pipeline = redis_client.multi()
-//         results[0].forEach((session) => {
-//             pipeline.set(`revoked_session:${session.session_id}`, 1, {
-//                 EX: user_token_duration,
-//                 NX: true,
-//             })
-//         })
-//         pipeline
-//             .exec()
-//             .then(() => {
-//                 callback(null, results)
-//             })
-//             .catch((redis_error) => {
-//                 console.error('Redis Error:', redis_error)
-//                 callback(null, results)
-//             })
-//     })
-// }
-
 export const delete_by_user_id = async (user_id) => {
     const connection = await async_pool_.getConnection()
     let sessions
@@ -132,7 +85,7 @@ export const refresh_token = async (data) => {
             return {status: 'session_expired'}
         }
 
-        await connection.execute('UPDATE Session SET refresh_token = ? WHERE refresh_token = ?', [data.new_refresh_token_hash, data.old_refresh_token_hash])
+        await connection.execute('UPDATE Session SET refresh_token = ?, revision = revision + 1 WHERE refresh_token = ?', [data.new_refresh_token_hash, data.old_refresh_token_hash])
 
         const cached_data_string = JSON.stringify({
             user_id: session.user_id,
@@ -153,13 +106,3 @@ export const refresh_token = async (data) => {
         connection.release()
     }
 }
-
-// export const refresh_token = (data, callback) => {
-//     refresh_token_async(data)
-//         .then((result) => {
-//             callback(null, result)
-//         })
-//         .catch((error) => {
-//             callback(error, null)
-//         })
-// }

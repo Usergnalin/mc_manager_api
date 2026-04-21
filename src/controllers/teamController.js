@@ -1,5 +1,7 @@
 import * as team_model from '../models/teamModel.js'
-import {set_path, get_path} from '../utils.js'
+import {db_events} from '../services/events.js'
+import logger from '../services/logger.js'
+import {set_path, get_path, filter_object, create_stream} from '../utils.js'
 
 export const create_team = ({team_data_path = 'team_data', user_id_path = 'user_id', output_team_data_path = 'team_data'} = {}) => {
     return async (req, res, next) => {
@@ -21,6 +23,23 @@ export const create_team = ({team_data_path = 'team_data', user_id_path = 'user_
     }
 }
 
+export const get_all_data_by_team_id = ({
+    agent_fields, command_fields, server_fields, module_fields,
+    team_id_path = 'team_id',
+    output_data_path = 'data',
+} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const team_id = get_path(res, team_id_path)
+            const results = await team_model.get_all_data_by_team_id(team_id, agent_fields, command_fields, server_fields, module_fields)
+            set_path(res, output_data_path, results)
+            next()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
 export const check_access_by_user_id_and_role = ({team_id_path = 'team_id', user_id_path = 'user_id', role = []} = {}) => {
     return async (req, res, next) => {
         try {
@@ -37,6 +56,82 @@ export const check_access_by_user_id_and_role = ({team_id_path = 'team_id', user
                 return res.status(403).json({message: 'User does not have access to this team'})
             }
             next()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
+export const stream_all_data_by_team_id = ({
+    agent_fields, command_fields, server_fields, module_fields,
+    team_id_path = 'team_id', session_id_path = 'session_id'
+} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const field_map = {
+                agent: agent_fields,
+                command: command_fields,
+                server: server_fields,
+                module: module_fields,
+            }
+
+            const team_id = get_path(res, team_id_path)
+            const session_id = get_path(res, session_id_path)
+
+            const event_names = [
+                `create:agent:team:${team_id}`,
+                `update:agent:team:${team_id}`,
+                `delete:agent:team:${team_id}`,
+                `create:command:team:${team_id}`,
+                `update:command:team:${team_id}`,
+                `delete:command:team:${team_id}`,
+                `create:server:team:${team_id}`,
+                `update:server:team:${team_id}`,
+                `delete:server:team:${team_id}`,
+                `create:module:team:${team_id}`,
+                `update:module:team:${team_id}`,
+                `delete:module:team:${team_id}`,
+            ]
+
+            const subscriptions = new Map()
+
+            const on_event = (event, payload) => {
+                try {
+                    const action = event.split(':')[0]
+                    const resource = event.split(':')[1]
+                    const fields = field_map[resource]
+                    if (fields) {
+                        const filtered_payload = {
+                            ...filter_object(payload, fields),
+                            _action: action,
+                            _resource: resource,
+                        }
+                        sse.send(filtered_payload)
+                    }
+                } catch (error) {
+                    logger.error({err: error, event: event}, 'Error SSE on_event')
+                }
+            }
+
+            const on_close = () => {
+                subscriptions.forEach((handler, event) => {
+                    db_events.off(event, handler)
+                })
+                subscriptions.clear()
+            }
+
+            const sse = create_stream(res, {
+                session_expiry: res.locals.session_expiry,
+                session_id,
+                on_heartbeat: (_stop) => {},
+                on_close,
+            })
+
+            event_names.forEach((event) => {
+                const handler = (payload) => on_event(event, payload)
+                subscriptions.set(event, handler)
+                db_events.on(event, handler)
+            })
         } catch (error) {
             next(error)
         }

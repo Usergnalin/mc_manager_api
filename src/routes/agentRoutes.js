@@ -52,7 +52,7 @@ router.get(
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
     team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     agent_controller.get_agent_by_team_id({
-        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at'],
+        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision','last_online'],
     }),
     global_controller.send_data({data_path: 'agent_data'}),
 )
@@ -65,7 +65,7 @@ router.get(
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
     team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     agent_controller.stream_agent_by_team_id({
-        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at'],
+        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
     }),
 )
 
@@ -86,6 +86,7 @@ router.get(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    global_controller.load_query_data({field: 'logs_history_lines', data_path: 'logs_history_lines'}),
     log_controller.stream_logs_by_agent_id()
 )
 

@@ -5,12 +5,13 @@ import {v7 as uuid} from 'uuid'
 import {get_path, create_stream} from '../utils.js'
 import logger from '../services/logger.js'
 
-export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_id_path = 'session_id', user_id_path = 'user_id'} = {}) => {
+export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_id_path = 'session_id', user_id_path = 'user_id', logs_history_lines_path = 'logs_history_lines'} = {}) => {
     return async (req, res, next) => {
         try {
             const server_id = get_path(res, server_id_path)
             const session_id = get_path(res, session_id_path)
             const user_id = get_path(res, user_id_path)
+            const logs_history_lines = get_path(res, logs_history_lines_path)
             const request_id = uuid()
 
             const select_results = await server_model.select_by_server_id(server_id, ['agent_id'])
@@ -19,6 +20,7 @@ export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_
 
             await command_model.insert_single(agent_id, user_id, {command: {
                 type: "start_server_log_stream",
+                logs_history_lines: logs_history_lines,
                 request_id: request_id,
                 server_id: server_id
             }})
@@ -70,16 +72,18 @@ export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_
     }
 }
 
-export const stream_logs_by_agent_id = ({agent_id_path = 'agent_id', session_id_path = 'session_id', user_id_path = 'user_id'} = {}) => {
+export const stream_logs_by_agent_id = ({agent_id_path = 'agent_id', session_id_path = 'session_id', user_id_path = 'user_id', logs_history_lines_path = 'logs_history_lines'} = {}) => {
     return async (req, res, next) => {
         try {
             const agent_id = get_path(res, agent_id_path)
             const session_id = get_path(res, session_id_path)
             const user_id = get_path(res, user_id_path)
+            const logs_history_lines = get_path(res, logs_history_lines_path)
             const request_id = uuid()
 
             await command_model.insert_single(agent_id, user_id, {command: {
                 type: "start_agent_log_stream",
+                logs_history_lines: logs_history_lines,
                 request_id: request_id,
             }})
 

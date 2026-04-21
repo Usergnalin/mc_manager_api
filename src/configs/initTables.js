@@ -18,7 +18,8 @@ CREATE TABLE User (
     username VARCHAR(63) NOT NULL UNIQUE,
     password VARCHAR(63) NOT NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Session (
@@ -29,7 +30,8 @@ CREATE TABLE Session (
     INDEX (user_id),
     FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
-    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
+    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Team (
@@ -38,6 +40,7 @@ CREATE TABLE Team (
     slug VARCHAR(15) NOT NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     CONSTRAINT unqiue_full_name UNIQUE (team_name, slug)
 );
 
@@ -47,6 +50,7 @@ CREATE TABLE UserTeam (
     role ENUM(${TEAM_ROLES.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'user',
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, team_id),
     FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE CASCADE
@@ -57,9 +61,11 @@ CREATE TABLE Agent (
     team_id BINARY(16) NOT NULL,
     agent_name VARCHAR(255) NOT NULL,
     agent_status ENUM(${AGENT_STATUS.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'offline',
+    last_online DATETIME NULL,
     public_key VARCHAR(255) NOT NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (team_id) REFERENCES Team(team_id) ON DELETE CASCADE
 );
 
@@ -70,6 +76,7 @@ CREATE TABLE Command (
     command JSON NOT NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     command_status ENUM(${COMMAND_STATUS.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'pending',
     command_feedback VARCHAR(1023) NULL,
     FOREIGN KEY (agent_id) REFERENCES Agent(agent_id) ON DELETE CASCADE,
@@ -84,8 +91,10 @@ CREATE TABLE Server (
     server_name VARCHAR(255) NOT NULL,
     properties JSON NOT NULL,
     status ENUM(${SERVER_STATUS.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'offline',
+    last_online DATETIME NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (agent_id) REFERENCES Agent(agent_id) ON DELETE CASCADE
 );
 
@@ -93,12 +102,28 @@ CREATE TABLE Module (
     module_id BINARY(16) PRIMARY KEY,
     server_id BINARY(16) NOT NULL,
     module_name VARCHAR(255) NOT NULL,
+    module_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     module_type ENUM(${MODULE_TYPES.map((r) => `'${r}'`).join(',')}) NOT NULL,
     module_metadata JSON NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (server_id) REFERENCES Server(server_id) ON DELETE CASCADE,
     INDEX (server_id)
 );
+
+DELIMITER //
+
+CREATE EVENT clean_old_commands
+ON SCHEDULE EVERY 1 HOUR
+DO
+BEGIN
+    DELETE FROM Command 
+    WHERE created_at < NOW() - INTERVAL 1 DAY
+    LIMIT 1000;
+END //
+
+DELIMITER ;
 `
 
 const init_tables = async () => {

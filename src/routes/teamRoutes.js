@@ -15,4 +15,35 @@ router.post(
     global_controller.send_data({data_path: 'team_data'}),
 )
 
+// Get all data by team id (user)
+router.get(
+    '/:team_id',
+    rate_limiter.normal,
+    session_handler.verify_session_token(),
+    global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
+    team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    team_controller.get_all_data_by_team_id({
+        agent_fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
+        command_fields: ['agent_id', 'command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
+        server_fields: ['agent_id', 'server_id', 'server_name', 'status', 'properties', 'revision', 'last_online'],
+        module_fields: ['server_id', 'module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision'],
+    }),
+    global_controller.send_data({data_path: 'data'}),
+)
+
+// Stream all data by team id (user)
+router.get(
+    '/:team_id/stream',
+    rate_limiter.normal,
+    session_handler.verify_session_token(),
+    global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
+    team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    team_controller.stream_all_data_by_team_id({
+        agent_fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision'],
+        command_fields: ['agent_id', 'command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
+        server_fields: ['agent_id', 'server_id', 'server_name', 'status', 'properties', 'revision'],
+        module_fields: ['server_id', 'module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision'],
+    })
+)
+
 export default router

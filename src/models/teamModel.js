@@ -1,25 +1,6 @@
 import pool from '../services/db.js'
 import {v7 as uuid} from 'uuid'
-import {generate_slug} from '../utils.js'
-
-// export const insert_single = (data, callback) => {
-//     const statement = `
-//     START TRANSACTION;
-//     INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?);
-//     INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?);
-//     COMMIT;
-//     `
-//     const team_id = uuid()
-//     const slug = generate_slug()
-//     const values = [team_id, data.team_name, slug, data.user_id, team_id, 'admin']
-//     pool.query(statement, values, (error, results) => {
-//         if (results) {
-//             results.team_id = team_id
-//             results.slug = slug
-//         }
-//         callback(error, results)
-//     })
-// }
+import {generate_slug, format_columns_select} from '../utils.js'
 
 export const insert_single = async (user_id, data) => {
     const connection = await pool.getConnection()
@@ -27,8 +8,8 @@ export const insert_single = async (user_id, data) => {
         const team_id = uuid()
         const slug = generate_slug()
         await connection.beginTransaction()
-        await connection.query(`INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?)`, [team_id, data.team_name, slug])
-        await connection.query(`INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`, [user_id, team_id, 'admin'])
+        await connection.execute(`INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?)`, [team_id, data.team_name, slug])
+        await connection.execute(`INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`, [user_id, team_id, 'admin'])
         await connection.commit()
         return {team_id, slug}
     } catch (error) {
@@ -39,20 +20,41 @@ export const insert_single = async (user_id, data) => {
     }
 }
 
-// module.exports.get_teams_by_user_id = (data, columns, callback) => {
-//     const formatted_columns = columns.map(column => {
-//         if (column === 'team_id') return 'BIN_TO_UUID(team_id) AS team_id'
-//         return column
-//     })
-//     const statement = `
-//     SELECT ${formatted_columns.join(', ')}
-//     FROM Team
-//     INNER JOIN UserTeam ON Team.team_id = UserTeam.team_id
-//     WHERE UserTeam.user_id = UUID_TO_BIN(?)
-//     `
-//     const values = [data.user_id]
-//     pool.query(statement, values, callback)
-// }
+export const get_all_data_by_team_id = async (team_id, agent_columns, command_columns, server_columns, module_columns) => {
+    const [agents, commands, servers, modules] = await Promise.all([
+        pool.execute(`
+            SELECT ${format_columns_select(agent_columns, 'Agent')}
+            FROM Agent
+            WHERE Agent.team_id = UUID_TO_BIN(?)`,
+            [team_id]
+        ),
+        pool.execute(`
+            SELECT ${format_columns_select(command_columns, 'Command')}
+            FROM Command
+            JOIN Agent ON Command.agent_id = Agent.agent_id
+            WHERE Agent.team_id = UUID_TO_BIN(?)
+            ORDER BY created_at DESC
+            LIMIT 100`,
+            [team_id]
+        ),
+        pool.execute(`
+            SELECT ${format_columns_select(server_columns, 'Server')}
+            FROM Server
+            JOIN Agent ON Server.agent_id = Agent.agent_id
+            WHERE Agent.team_id = UUID_TO_BIN(?)`,
+            [team_id]
+        ),
+        pool.execute(`
+            SELECT ${format_columns_select(module_columns, 'Module')}
+            FROM Module
+            JOIN Server ON Module.server_id = Server.server_id
+            JOIN Agent ON Server.agent_id = Agent.agent_id
+            WHERE Agent.team_id = UUID_TO_BIN(?)`,
+            [team_id]
+        )
+    ])
+    return {agents: agents[0], commands: commands[0], servers: servers[0], modules: modules[0]}
+}
 
 export const check_access_by_user_id_and_role = async (user_id, team_id, role) => {
     const results = await pool.query(

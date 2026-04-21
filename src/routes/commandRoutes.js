@@ -24,7 +24,7 @@ router.get(
     '/:agent_id',
     rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
-    command_controller.get_command_by_agent_id_and_mark_sent({fields: ['command_id', 'command']}),
+    command_controller.get_command_by_agent_id_and_mark_sent({fields: ['command_id', 'command', 'revision']}),
     global_controller.send_data({data_path: 'command_data'}),
 )
 
@@ -34,7 +34,7 @@ router.get(
     rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
     command_controller.stream_command_by_agent_id_and_mark_sent({
-        fields: ['command_id', 'command'],
+        fields: ['command_id', 'command', 'revision'],
     }),
 )
 
@@ -46,7 +46,7 @@ router.get(
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     command_controller.get_command_by_agent_id({
-        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback'],
+        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
     }),
     global_controller.send_data({data_path: 'command_data'}),
 )
@@ -59,7 +59,7 @@ router.get(
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     command_controller.stream_command_by_agent_id({
-        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback'],
+        fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
     }),
 )
 

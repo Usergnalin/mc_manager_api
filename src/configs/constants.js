@@ -1,4 +1,9 @@
-// --- DB allowed enums ---
+// --- DB info ---
+
+export const COMMAND_COLUMNS = ['command_id', 'agent_id', 'user_id', 'command', 'command_status', 'revision', 'created_at', 'updated_at', 'command_feedback']
+export const AGENT_COLUMNS = ['agent_id', 'team_id', 'agent_name', 'agent_status', 'last_online', 'public_key', 'revision', 'created_at', 'updated_at']
+export const MODULE_COLUMNS = ['module_id', 'server_id', 'module_name', 'module_enabled', 'module_type', 'module_metadata', 'revision', 'created_at', 'updated_at']
+export const SERVER_COLUMNS = ['server_id', 'agent_id', 'server_name', 'properties', 'status', 'last_online', 'revision', 'created_at', 'updated_at']
 
 export const COMMAND_STATUS = ['pending', 'queued', 'sent', 'success', 'failure']
 export const SERVER_STATUS = ['online', 'offline', 'starting', 'stopping']
@@ -13,7 +18,7 @@ export const USER_REFRESH_TOKEN_DURATION = '30d'
 // Period of time before a refresh token reuse would not trigger a breach event
 export const USER_REFRESH_TOKEN_GRACE_PERIOD = '30s'
 // User session token duration before needing to refresh token
-export const USER_TOKEN_DURATION = '60m'
+export const USER_TOKEN_DURATION = '60m' //default: 60m
 // Agent session token before requiring agent signature
 export const AGENT_TOKEN_DURATION = '120m'
 // JWT token signing algorithm for session and refresh tokens
@@ -34,9 +39,9 @@ export const AGENT_HEARTBEAT_EXPIRY = '60s'
 
 // -- Rate Limits ---
 export const RATE_LIMIT = {
-    slow: {window: "10m", limit: 50},
-    normal: {window: "5m", limit: 100},
-    fast: {window: "1m", limit: 100}
+    slow: {window: "10m", limit: 10},
+    normal: {window: "5m", limit: 200},
+    fast: {window: "1m", limit: 200}
 }
 
 // --- Other configurables ---
@@ -49,6 +54,10 @@ export const MODRINTH_USER_AGENT = 'Usergnalin/mc_manager_api (usernilang@gmail.
 export const LINKING_CODE_EXPIRY = '30m'
 // Period of time where nonces are kept, nonces older than this are rejected
 export const NONCE_MAX_DURATION = '1m'
+// Max body size of json requests
+export const JSON_MAX_BODY_SIZE = '10mb'
+// Interval of scraping of new mc and loader versions
+export const LOADER_UPDATE_INTERVAL = '6h'
 
 export const CONSTANTS = {
     COMMAND_STATUS,
@@ -71,6 +80,11 @@ export const CONSTANTS = {
     NONCE_MAX_DURATION,
     RATE_LIMIT,
     MODULE_TYPES,
+    JSON_MAX_BODY_SIZE,
+    COMMAND_COLUMNS,
+    AGENT_COLUMNS,
+    MODULE_COLUMNS,
+    SERVER_COLUMNS,
 }
 
 export const read_constants = async (req, res, next) => {

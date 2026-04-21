@@ -5,6 +5,7 @@ import cors from 'cors'
 import mainRoutes from './routes/mainRoutes.js'
 import pinoHttp from 'pino-http'
 import logger from './services/logger.js'
+import {JSON_MAX_BODY_SIZE} from './configs/constants.js'
 
 const app = express()
 
@@ -31,7 +32,7 @@ app.use(
     }),
 )
 
-const allowedOrigins = ['https://www.gnalin.xyz', 'https://gnalin.xyz']
+const allowedOrigins = ['https://www.gnalin.xyz', 'https://gnalin.xyz', 'https://gnalin.xyz:5174']
 
 app.use(
     cors({
@@ -48,7 +49,7 @@ app.use(
 
 app.disable('x-powered-by')
 app.use(pinoHttp({logger}))
-app.use(express.json())
+app.use(express.json({ limit: JSON_MAX_BODY_SIZE}))
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
 

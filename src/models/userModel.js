@@ -89,7 +89,7 @@ export const update_by_user_id = async (user_id, data, columns) => {
     })
     const statement = `
         UPDATE User
-        SET ${fields.join(', ')}
+        SET ${fields.join(', ')}, revision = revision + 1
         WHERE user_id = UUID_TO_BIN(?)
     `
     values.push(user_id)
