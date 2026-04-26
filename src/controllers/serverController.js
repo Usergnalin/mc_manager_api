@@ -1,7 +1,7 @@
 import * as server_model from '../models/serverModel.js'
-import {db_events} from '../services/events.js'
+import {db_events} from '../providers/events.js'
 import {get_path, set_path, create_stream, filter_object} from '../utils.js'
-import logger from '../services/logger.js'
+import logger from '../providers/logger.js'
 
 // === Database operations ===
 

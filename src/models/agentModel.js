@@ -1,6 +1,6 @@
-import pool from '../services/db.js'
-import {db_events} from '../services/events.js'
-import {redis_client} from '../services/redis.js'
+import pool from '../providers/db.js'
+import {db_events} from '../providers/events.js'
+import {redis_client} from '../providers/redis.js'
 import ms from 'ms'
 import {v7 as uuid} from 'uuid'
 import {generate_phrase, format_columns_select} from '../utils.js'
@@ -20,15 +20,17 @@ export const insert_by_linking_code = async (linking_code, data) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        await connection.execute(`
+        await connection.execute(
+            `
             INSERT INTO Agent (agent_id, team_id, agent_name, public_key, agent_status)
             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?)`,
             [agent_id, team_id, data.agent_name, data.public_key, agent_status],
         )
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT ${formatted_agent_columns}
             FROM Agent WHERE agent_id = UUID_TO_BIN(?)`,
-            [agent_id]
+            [agent_id],
         )
         await connection.commit()
         const payload = select_results[0]
@@ -71,7 +73,7 @@ export const update_by_agent_id = async (agent_id, data, columns) => {
             fields.push(`${column} = ?`)
             values.push(data[column])
             if (column === 'agent_status' && data[column] === 'offline') {
-                if (!fields.some(field => field.startsWith('last_online'))) {
+                if (!fields.some((field) => field.startsWith('last_online'))) {
                     fields.push('last_online = NOW()')
                 }
             }
@@ -80,20 +82,22 @@ export const update_by_agent_id = async (agent_id, data, columns) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [update_results] = await connection.execute(`
+        const [update_results] = await connection.execute(
+            `
             UPDATE Agent SET ${fields.join(', ')}, revision = revision + 1
             WHERE agent_id = UUID_TO_BIN(?)`,
-            [...values, agent_id]
+            [...values, agent_id],
         )
         if (update_results.affectedRows === 0) {
             await connection.rollback()
             return update_results
         }
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT ${formatted_agent_columns}
             FROM Agent
             WHERE Agent.agent_id = UUID_TO_BIN(?)`,
-            [agent_id]
+            [agent_id],
         )
         await connection.commit()
         const payload = select_results[0]
@@ -108,6 +112,23 @@ export const update_by_agent_id = async (agent_id, data, columns) => {
     }
 }
 
+export const delete_by_agent_id = async (agent_id) => {
+    const [select_results] = await pool.execute(
+        `
+        SELECT BIN_TO_UUID(Agent.team_id) as team_id
+        FROM Agent
+        WHERE Agent.agent_id = UUID_TO_BIN(?)`,
+        [agent_id],
+    )
+    if (select_results.length === 0) return {affectedRows: 0}
+    const {team_id} = select_results[0]
+    const [delete_results] = await pool.execute('DELETE FROM Agent WHERE agent_id = UUID_TO_BIN(?)', [agent_id])
+    const payload = {team_id, agent_id}
+    db_events.emit(`delete:agent:agent:${agent_id}`, payload)
+    db_events.emit(`delete:agent:team:${team_id}`, payload)
+    return delete_results
+}
+
 export const update_all = async (data, columns) => {
     const fields = []
     const values = []
@@ -117,7 +138,8 @@ export const update_all = async (data, columns) => {
             values.push(data[column])
         }
     })
-    return await pool.query(`
+    return await pool.query(
+        `
         UPDATE Agent 
         SET ${fields.join(', ')}, revision = revision + 1`,
         values,
@@ -125,7 +147,8 @@ export const update_all = async (data, columns) => {
 }
 
 export const check_access_by_user_id_and_role = async (user_id, agent_id, role) => {
-    const results = await pool.query(`
+    const results = await pool.query(
+        `
         SELECT
         EXISTS (
             SELECT 1 FROM User WHERE user_id = UUID_TO_BIN(?)

@@ -1,4 +1,4 @@
-import {redis_client} from '../services/redis.js'
+import {redis_client} from '../providers/redis.js'
 import {compare_versions} from '../utils.js'
 
 export const update_versions = async (data) => {

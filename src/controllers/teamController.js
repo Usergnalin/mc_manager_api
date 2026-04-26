@@ -1,6 +1,6 @@
 import * as team_model from '../models/teamModel.js'
-import {db_events} from '../services/events.js'
-import logger from '../services/logger.js'
+import {db_events} from '../providers/events.js'
+import logger from '../providers/logger.js'
 import {set_path, get_path, filter_object, create_stream} from '../utils.js'
 
 export const create_team = ({team_data_path = 'team_data', user_id_path = 'user_id', output_team_data_path = 'team_data'} = {}) => {
@@ -23,11 +23,7 @@ export const create_team = ({team_data_path = 'team_data', user_id_path = 'user_
     }
 }
 
-export const get_all_data_by_team_id = ({
-    agent_fields, command_fields, server_fields, module_fields,
-    team_id_path = 'team_id',
-    output_data_path = 'data',
-} = {}) => {
+export const get_all_data_by_team_id = ({agent_fields, command_fields, server_fields, module_fields, team_id_path = 'team_id', output_data_path = 'data'} = {}) => {
     return async (req, res, next) => {
         try {
             const team_id = get_path(res, team_id_path)
@@ -62,10 +58,7 @@ export const check_access_by_user_id_and_role = ({team_id_path = 'team_id', user
     }
 }
 
-export const stream_all_data_by_team_id = ({
-    agent_fields, command_fields, server_fields, module_fields,
-    team_id_path = 'team_id', session_id_path = 'session_id'
-} = {}) => {
+export const stream_all_data_by_team_id = ({agent_fields, command_fields, server_fields, module_fields, team_id_path = 'team_id', session_id_path = 'session_id'} = {}) => {
     return async (req, res, next) => {
         try {
             const field_map = {

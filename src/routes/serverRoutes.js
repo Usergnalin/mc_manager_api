@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as agent_auth_handler from '../middlewares/agentAuthHandler.js'
 import * as global_controller from '../controllers/globalController.js'
@@ -103,7 +103,7 @@ router.get(
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
     server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     global_controller.load_query_data({field: 'logs_history_lines', data_path: 'logs_history_lines'}),
-    log_controller.stream_logs_by_server_id()
+    log_controller.stream_logs_by_server_id(),
 )
 
 // Report server logs by server_id (agent)
@@ -116,6 +116,5 @@ router.post(
     log_controller.create_server_log(),
     global_controller.send_empty(),
 )
-
 
 export default router

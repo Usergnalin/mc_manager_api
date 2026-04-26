@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as password_handler from '../middlewares/passwordHandler.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as global_controller from '../controllers/globalController.js'
@@ -26,7 +26,7 @@ router.get(
         user_team_fields: ['role', 'revision'],
         team_fields: ['team_id', 'team_name', 'slug', 'revision'],
     }),
-    global_controller.send_data({data_path: 'user_data'})
+    global_controller.send_data({data_path: 'user_data'}),
 )
 
 // Update username by id (user)

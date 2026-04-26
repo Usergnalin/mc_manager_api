@@ -1,7 +1,9 @@
-import logger from './src/services/logger.js'
-import {initialise_redis} from './src/services/redis.js'
+import logger from './src/providers/logger.js'
+import {initialise_redis} from './src/providers/redis.js'
 import agent_startup from './src/startup/agentStatus.js'
-import initialise_version_cache from './src/startup/VersionCache.js'
+import {LOADER_UPDATE_INTERVAL} from './src/configs/constants.js'
+import ms from 'ms'
+import {Queue} from 'bullmq'
 
 const app_port = process.env.APP_PORT
 
@@ -9,14 +11,20 @@ const start_server = async () => {
     try {
         await initialise_redis()
         await agent_startup()
-        logger.info({}, 'Starting loader cache')
-        await initialise_version_cache()
-        const { default: app } = await import('./src/app.js')
+        const fetch_loaders = new Queue('fetch_loaders')
+        fetch_loaders.add(
+            'fetch_loaders',
+            {},
+            {
+                repeat: {every: ms(LOADER_UPDATE_INTERVAL)},
+            },
+        )
+        const {default: app} = await import('./src/app.js')
         app.listen(app_port, () => logger.info({port: app_port}, 'Server successfully started'))
     } catch (error) {
         logger.fatal({err: error}, 'Failed to start server')
         process.exit(1)
     }
 }
- 
+
 start_server()

@@ -1,4 +1,4 @@
-import pool from '../services/db.js'
+import pool from '../providers/db.js'
 import {v7 as uuid} from 'uuid'
 import {generate_slug, format_columns_select} from '../utils.js'
 
@@ -48,19 +48,19 @@ export const select_by_user_id_with_team = async (user_id, user_columns, user_te
     if (rows.length === 0) return null
 
     const user = {}
-    user_columns.forEach(column => {
+    user_columns.forEach((column) => {
         user[column] = rows[0][column]
     })
-    
+
     user.teams = []
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
         if (row.team_id) {
             const team_data = {}
-            user_team_columns.forEach(column => {
+            user_team_columns.forEach((column) => {
                 team_data[column] = row[column]
             })
-            team_columns.forEach(column => {
+            team_columns.forEach((column) => {
                 team_data[column] = row[column]
             })
             user.teams.push(team_data)

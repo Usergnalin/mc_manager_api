@@ -1,5 +1,5 @@
-import pool from '../services/db.js'
-import {db_events} from '../services/events.js'
+import pool from '../providers/db.js'
+import {db_events} from '../providers/events.js'
 import {format_columns_select} from '../utils.js'
 import {SERVER_COLUMNS} from '../configs/constants.js'
 
@@ -112,12 +112,12 @@ export const check_access_by_user_id_and_role = async (server_id, user_id, role)
 //     try {
 //         await connection.beginTransaction()
 //         const [select_results] = await connection.execute(`
-//             SELECT 
-//                 BIN_TO_UUID(Server.agent_id) as agent_id, 
-//                 BIN_TO_UUID(Agent.team_id) as team_id 
+//             SELECT
+//                 BIN_TO_UUID(Server.agent_id) as agent_id,
+//                 BIN_TO_UUID(Agent.team_id) as team_id
 //             FROM Server
 //             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
-//             WHERE Server.server_id = UUID_TO_BIN(?) 
+//             WHERE Server.server_id = UUID_TO_BIN(?)
 //             FOR UPDATE`,
 //             [server_id]
 //         )
@@ -150,12 +150,12 @@ export const check_access_by_user_id_and_role = async (server_id, user_id, role)
 //     try {
 //         await connection.beginTransaction()
 //         const [select_results] = await connection.execute(`
-//             SELECT 
-//                 BIN_TO_UUID(Server.agent_id) as agent_id, 
-//                 BIN_TO_UUID(Agent.team_id) as team_id 
+//             SELECT
+//                 BIN_TO_UUID(Server.agent_id) as agent_id,
+//                 BIN_TO_UUID(Agent.team_id) as team_id
 //             FROM Server
 //             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
-//             WHERE Server.server_id = UUID_TO_BIN(?) 
+//             WHERE Server.server_id = UUID_TO_BIN(?)
 //             FOR UPDATE`,
 //             [server_id]
 //         )
@@ -218,16 +218,19 @@ export const insert_single = async (agent_id, data) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [insert_results] = await connection.execute(
-            `INSERT INTO Server (server_id, agent_id, server_name, properties) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-            [data.server_id, agent_id, data.server_name, JSON.stringify(data.properties)]
-        )
-        const [select_results] = await connection.execute(`
+        const [insert_results] = await connection.execute(`INSERT INTO Server (server_id, agent_id, server_name, properties) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`, [
+            data.server_id,
+            agent_id,
+            data.server_name,
+            JSON.stringify(data.properties),
+        ])
+        const [select_results] = await connection.execute(
+            `
             SELECT BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_server_columns}
             FROM Server
             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Server.server_id = UUID_TO_BIN(?)`,
-            [data.server_id]
+            [data.server_id],
         )
         await connection.commit()
         const payload = select_results[0]
@@ -253,7 +256,7 @@ export const update_by_server_id = async (server_id, data, columns) => {
             fields.push(`${column} = ?`)
             values.push(value)
             if (column === 'status' && data[column] === 'offline') {
-                if (!fields.some(field => field.startsWith('last_online'))) {
+                if (!fields.some((field) => field.startsWith('last_online'))) {
                     fields.push('last_online = NOW()')
                 }
             }
@@ -262,22 +265,24 @@ export const update_by_server_id = async (server_id, data, columns) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [update_results] = await connection.execute(`
+        const [update_results] = await connection.execute(
+            `
             UPDATE Server 
             SET ${fields.join(', ')}, revision = revision + 1
             WHERE server_id = UUID_TO_BIN(?)`,
-            [...values, server_id]
+            [...values, server_id],
         )
         if (update_results.affectedRows === 0) {
             await connection.rollback()
             return update_results
         }
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_server_columns}
             FROM Server
             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Server.server_id = UUID_TO_BIN(?)`,
-            [server_id]
+            [server_id],
         )
         await connection.commit()
         const payload = select_results[0]
@@ -299,14 +304,11 @@ export const delete_by_server_id = async (server_id) => {
         FROM Server
         INNER JOIN Agent ON Server.agent_id = Agent.agent_id
         WHERE Server.server_id = UUID_TO_BIN(?)`,
-        [server_id]
+        [server_id],
     )
-    if (select_results.length === 0) return { affectedRows: 0 }
-    const { agent_id, team_id } = select_results[0]
-    const [delete_results] = await pool.execute(
-        'DELETE FROM Server WHERE server_id = UUID_TO_BIN(?)',
-        [server_id]
-    )
+    if (select_results.length === 0) return {affectedRows: 0}
+    const {agent_id, team_id} = select_results[0]
+    const [delete_results] = await pool.execute('DELETE FROM Server WHERE server_id = UUID_TO_BIN(?)', [server_id])
     const payload = {agent_id, server_id, team_id}
     db_events.emit(`delete:server:server:${server_id}`, payload)
     db_events.emit(`delete:server:agent:${agent_id}`, payload)
@@ -333,4 +335,3 @@ export const select_by_agent_id = async (agent_id, columns) => {
     )
     return results
 }
-

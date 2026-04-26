@@ -4,7 +4,7 @@ import helmet from 'helmet'
 import cors from 'cors'
 import mainRoutes from './routes/mainRoutes.js'
 import pinoHttp from 'pino-http'
-import logger from './services/logger.js'
+import logger from './providers/logger.js'
 import {JSON_MAX_BODY_SIZE} from './configs/constants.js'
 
 const app = express()
@@ -49,7 +49,7 @@ app.use(
 
 app.disable('x-powered-by')
 app.use(pinoHttp({logger}))
-app.use(express.json({ limit: JSON_MAX_BODY_SIZE}))
+app.use(express.json({limit: JSON_MAX_BODY_SIZE}))
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
 

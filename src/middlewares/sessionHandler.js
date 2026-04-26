@@ -4,7 +4,7 @@ import ms from 'ms'
 import crypto from 'node:crypto'
 import {get_path, set_path} from '../utils.js'
 import * as session_model from '../models/sessionModel.js'
-import {redis_client} from '../services/redis.js'
+import {redis_client} from '../providers/redis.js'
 import {USER_REFRESH_TOKEN_DURATION, TOKEN_ALGORITHM, USER_TOKEN_DURATION} from '../configs/constants.js'
 
 const token_secret = process.env.TOKEN_SECRET

@@ -1,7 +1,7 @@
-import pool from '../services/db.js'
+import pool from '../providers/db.js'
 import {format_columns_select} from '../utils.js'
 import {MODULE_COLUMNS} from '../configs/constants.js'
-import {db_events} from '../services/events.js'
+import {db_events} from '../providers/events.js'
 
 const formatted_module_columns = format_columns_select(MODULE_COLUMNS, 'Module')
 
@@ -84,28 +84,23 @@ export const insert = async (data, server_id) => {
     try {
         await connection.beginTransaction()
         const row_placeholders = data.map(() => '(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)').join(', ')
-        const values = data.flatMap((item) => [
-            item.module_id, 
-            server_id, 
-            item.module_name, 
-            item.module_enabled, 
-            item.module_type, 
-            JSON.stringify(item.module_metadata)
-        ])
-        await connection.query(`
+        const values = data.flatMap((item) => [item.module_id, server_id, item.module_name, item.module_enabled, item.module_type, JSON.stringify(item.module_metadata)])
+        await connection.query(
+            `
             INSERT INTO Module (module_id, server_id, module_name, module_enabled, module_type, module_metadata) 
             VALUES ${row_placeholders}`,
-            values
+            values,
         )
-        const module_ids = data.map(module => module.module_id)
+        const module_ids = data.map((module) => module.module_id)
         const select_placeholders = module_ids.map(() => 'UUID_TO_BIN(?)').join(', ')
-        const [select_results] = await connection.query(`
+        const [select_results] = await connection.query(
+            `
             SELECT BIN_TO_UUID(Server.agent_id) as agent_id, BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_module_columns}
             FROM Module
             INNER JOIN Server ON Module.server_id = Server.server_id
             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Module.module_id IN (${select_placeholders})`,
-            module_ids
+            module_ids,
         )
         await connection.commit()
         select_results.forEach((module) => {
@@ -117,25 +112,26 @@ export const insert = async (data, server_id) => {
         return select_results
     } catch (error) {
         await connection.rollback()
-        throw error;
+        throw error
     } finally {
         connection.release()
     }
 }
 
 export const delete_by_module_id = async (module_id) => {
-    const [select_results] = await pool.execute(`
+    const [select_results] = await pool.execute(
+        `
         SELECT BIN_TO_UUID(Module.server_id) as server_id, BIN_TO_UUID(Server.agent_id) as agent_id, BIN_TO_UUID(Agent.team_id) as team_id
         FROM Module
         INNER JOIN Server ON Module.server_id = Server.server_id
         INNER JOIN Agent ON Server.agent_id = Agent.agent_id
         WHERE Module.module_id = UUID_TO_BIN(?)`,
-        [module_id]
+        [module_id],
     )
-    if (select_results.length === 0) return { affectedRows: 0 }
-    const { server_id, agent_id, team_id } = select_results[0]
+    if (select_results.length === 0) return {affectedRows: 0}
+    const {server_id, agent_id, team_id} = select_results[0]
     const [delete_results] = await pool.execute('DELETE FROM Module WHERE module_id = UUID_TO_BIN(?)', [module_id])
-    const payload = { team_id, agent_id, server_id, module_id }
+    const payload = {team_id, agent_id, server_id, module_id}
     db_events.emit(`delete:module:module:${module_id}`, payload)
     db_events.emit(`delete:module:server:${server_id}`, payload)
     db_events.emit(`delete:module:agent:${agent_id}`, payload)
@@ -167,22 +163,24 @@ export const update_by_module_id = async (module_id, data, columns) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [update_results] = await connection.execute(`
+        const [update_results] = await connection.execute(
+            `
             UPDATE Module SET ${fields.join(', ')}, revision = revision + 1
             WHERE module_id = UUID_TO_BIN(?)`,
-            [...values, module_id]
+            [...values, module_id],
         )
         if (update_results.affectedRows === 0) {
             await connection.rollback()
             return update_results
         }
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT BIN_TO_UUID(Server.agent_id) as agent_id, BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_module_columns}
             FROM Module
             INNER JOIN Server ON Module.server_id = Server.server_id
             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Module.module_id = UUID_TO_BIN(?)`,
-            [module_id]
+            [module_id],
         )
         await connection.commit()
         const payload = select_results[0]

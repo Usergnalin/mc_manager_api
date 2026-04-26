@@ -1,4 +1,4 @@
-import {redis_client_presence} from '../services/redis.js'
+import {redis_client_presence} from '../providers/redis.js'
 import * as agent_model from '../models/agentModel.js'
 
 export default async () => {

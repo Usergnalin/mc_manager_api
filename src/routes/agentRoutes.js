@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as nonce_handler from '../middlewares/nonceHandler.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as agent_auth_handler from '../middlewares/agentAuthHandler.js'
@@ -52,7 +52,7 @@ router.get(
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
     team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     agent_controller.get_agent_by_team_id({
-        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision','last_online'],
+        fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
     }),
     global_controller.send_data({data_path: 'agent_data'}),
 )
@@ -75,7 +75,17 @@ router.put(
     rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
     global_controller.load_body_data({fields: ['agent_status'], data_path: 'agent_data'}),
-    agent_controller.update_by_agent_id({fields: ['agent_status']}),
+    agent_controller.update_agent_by_agent_id({fields: ['agent_status']}),
+    global_controller.send_empty(),
+)
+
+// Delete agent by agent id (user)
+router.delete(
+    '/:agent_id',
+    rate_limiter.normal,
+    session_handler.verify_session_token(),
+    agent_controller.check_access_by_user_id_and_role({role: ['admin']}),
+    agent_controller.delete_agent_by_agent_id(),
     global_controller.send_empty(),
 )
 
@@ -87,7 +97,7 @@ router.get(
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
     global_controller.load_query_data({field: 'logs_history_lines', data_path: 'logs_history_lines'}),
-    log_controller.stream_logs_by_agent_id()
+    log_controller.stream_logs_by_agent_id(),
 )
 
 // Report agent logs by agent_id (agent)
@@ -100,6 +110,5 @@ router.post(
     log_controller.create_agent_log(),
     global_controller.send_empty(),
 )
-
 
 export default router

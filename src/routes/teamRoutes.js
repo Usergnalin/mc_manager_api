@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as global_controller from '../controllers/globalController.js'
 import * as team_controller from '../controllers/teamController.js'
@@ -43,7 +43,7 @@ router.get(
         command_fields: ['agent_id', 'command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
         server_fields: ['agent_id', 'server_id', 'server_name', 'status', 'properties', 'revision'],
         module_fields: ['server_id', 'module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision'],
-    })
+    }),
 )
 
 export default router

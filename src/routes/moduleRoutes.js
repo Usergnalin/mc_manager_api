@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as agent_auth_handler from '../middlewares/agentAuthHandler.js'
 import * as global_controller from '../controllers/globalController.js'

@@ -1,9 +1,9 @@
-import {db_events} from '../services/events.js'
+import {db_events} from '../providers/events.js'
 import * as command_model from '../models/commandModel.js'
 import * as agent_model from '../models/agentModel.js'
-import logger from '../services/logger.js'
+import logger from '../providers/logger.js'
 import ms from 'ms'
-import {redis_client_presence} from '../services/redis.js'
+import {redis_client_presence} from '../providers/redis.js'
 import {get_path, set_path, filter_object, create_stream} from '../utils.js'
 import {AGENT_HEARTBEAT_EXPIRY} from '../configs/constants.js'
 

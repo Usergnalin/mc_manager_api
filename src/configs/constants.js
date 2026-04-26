@@ -39,9 +39,9 @@ export const AGENT_HEARTBEAT_EXPIRY = '60s'
 
 // -- Rate Limits ---
 export const RATE_LIMIT = {
-    slow: {window: "10m", limit: 10},
-    normal: {window: "5m", limit: 200},
-    fast: {window: "1m", limit: 200}
+    slow: {window: '10m', limit: 10},
+    normal: {window: '5m', limit: 200},
+    fast: {window: '1m', limit: 200},
 }
 
 // --- Other configurables ---

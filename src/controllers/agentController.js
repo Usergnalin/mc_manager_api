@@ -1,7 +1,7 @@
 import * as agent_model from '../models/agentModel.js'
-import logger from '../services/logger.js'
-import {db_events} from '../services/events.js'
-import {redis_events} from '../services/events.js'
+import logger from '../providers/logger.js'
+import {db_events} from '../providers/events.js'
+import {redis_events} from '../providers/events.js'
 import {get_path, set_path, create_stream, filter_object} from '../utils.js'
 
 redis_events.on('agent_expired', async (agent_id) => {
@@ -42,7 +42,7 @@ export const create_agent_linking_code = ({team_id_path = 'team_id', output_link
     }
 }
 
-export const update_by_agent_id = ({fields, agent_id_path = 'agent_id', agent_data_path = 'agent_data'} = {}) => {
+export const update_agent_by_agent_id = ({fields, agent_id_path = 'agent_id', agent_data_path = 'agent_data'} = {}) => {
     return async (req, res, next) => {
         try {
             const agent_id = get_path(res, agent_id_path)
@@ -51,6 +51,18 @@ export const update_by_agent_id = ({fields, agent_id_path = 'agent_id', agent_da
             if (results.affectedRows === 0) {
                 return res.status(404).json({message: 'Agent not found'})
             }
+            next()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
+export const delete_agent_by_agent_id = ({agent_id_path = 'agent_id'} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const agent_id = get_path(res, agent_id_path)
+            await agent_model.delete_by_agent_id(agent_id)
             next()
         } catch (error) {
             next(error)

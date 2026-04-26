@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit'
 import RedisStore from 'rate-limit-redis'
-import {redis_client} from '../services/redis.js'
+import {redis_client} from './redis.js'
 import ms from 'ms'
 import {RATE_LIMIT} from '../configs/constants.js'
 
@@ -11,7 +11,7 @@ export const slow = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => redis_client.sendCommand(args),
-        prefix: 'ratelimit:slow:', 
+        prefix: 'ratelimit:slow:',
     }),
 })
 
@@ -22,7 +22,7 @@ export const normal = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => redis_client.sendCommand(args),
-        prefix: 'ratelimit:normal:', 
+        prefix: 'ratelimit:normal:',
     }),
 })
 
@@ -33,6 +33,6 @@ export const fast = rateLimit({
     legacyHeaders: false,
     store: new RedisStore({
         sendCommand: (...args) => redis_client.sendCommand(args),
-        prefix: 'ratelimit:fast:', 
+        prefix: 'ratelimit:fast:',
     }),
 })

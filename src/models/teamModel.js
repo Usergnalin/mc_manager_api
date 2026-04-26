@@ -1,4 +1,4 @@
-import pool from '../services/db.js'
+import pool from '../providers/db.js'
 import {v7 as uuid} from 'uuid'
 import {generate_slug, format_columns_select} from '../utils.js'
 
@@ -22,36 +22,40 @@ export const insert_single = async (user_id, data) => {
 
 export const get_all_data_by_team_id = async (team_id, agent_columns, command_columns, server_columns, module_columns) => {
     const [agents, commands, servers, modules] = await Promise.all([
-        pool.execute(`
+        pool.execute(
+            `
             SELECT ${format_columns_select(agent_columns, 'Agent')}
             FROM Agent
             WHERE Agent.team_id = UUID_TO_BIN(?)`,
-            [team_id]
+            [team_id],
         ),
-        pool.execute(`
+        pool.execute(
+            `
             SELECT ${format_columns_select(command_columns, 'Command')}
             FROM Command
             JOIN Agent ON Command.agent_id = Agent.agent_id
             WHERE Agent.team_id = UUID_TO_BIN(?)
             ORDER BY created_at DESC
             LIMIT 100`,
-            [team_id]
+            [team_id],
         ),
-        pool.execute(`
+        pool.execute(
+            `
             SELECT ${format_columns_select(server_columns, 'Server')}
             FROM Server
             JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Agent.team_id = UUID_TO_BIN(?)`,
-            [team_id]
+            [team_id],
         ),
-        pool.execute(`
+        pool.execute(
+            `
             SELECT ${format_columns_select(module_columns, 'Module')}
             FROM Module
             JOIN Server ON Module.server_id = Server.server_id
             JOIN Agent ON Server.agent_id = Agent.agent_id
             WHERE Agent.team_id = UUID_TO_BIN(?)`,
-            [team_id]
-        )
+            [team_id],
+        ),
     ])
     return {agents: agents[0], commands: commands[0], servers: servers[0], modules: modules[0]}
 }

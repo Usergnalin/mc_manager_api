@@ -1,6 +1,6 @@
-import pool from '../services/db.js'
-import logger from '../services/logger.js'
-import {redis_client, initialise_redis} from '../services/redis.js'
+import pool from '../providers/db.js'
+import logger from '../providers/logger.js'
+import {redis_client, initialise_redis} from '../providers/redis.js'
 import {COMMAND_STATUS, SERVER_STATUS, AGENT_STATUS, TEAM_ROLES, MODULE_TYPES} from '../configs/constants.js'
 
 const SQLSTATEMENT = `

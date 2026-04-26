@@ -1,4 +1,4 @@
-import {redis_client} from '../services/redis.js'
+import {redis_client} from '../providers/redis.js'
 import {NONCE_MAX_DURATION} from '../configs/constants.js'
 import ms from 'ms'
 

@@ -1,9 +1,9 @@
-import {logs_events} from '../services/events.js'
+import {logs_events} from '../providers/events.js'
 import * as command_model from '../models/commandModel.js'
 import * as server_model from '../models/serverModel.js'
 import {v7 as uuid} from 'uuid'
 import {get_path, create_stream} from '../utils.js'
-import logger from '../services/logger.js'
+import logger from '../providers/logger.js'
 
 export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_id_path = 'session_id', user_id_path = 'user_id', logs_history_lines_path = 'logs_history_lines'} = {}) => {
     return async (req, res, next) => {
@@ -18,12 +18,14 @@ export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_
 
             const agent_id = select_results.agent_id
 
-            await command_model.insert_single(agent_id, user_id, {command: {
-                type: "start_server_log_stream",
-                logs_history_lines: logs_history_lines,
-                request_id: request_id,
-                server_id: server_id
-            }})
+            await command_model.insert_single(agent_id, user_id, {
+                command: {
+                    type: 'start_server_log_stream',
+                    logs_history_lines: logs_history_lines,
+                    request_id: request_id,
+                    server_id: server_id,
+                },
+            })
 
             const event_names = [`log:server:${server_id}`]
 
@@ -43,15 +45,16 @@ export const stream_logs_by_server_id = ({server_id_path = 'server_id', session_
                 })
                 subscriptions.clear()
                 try {
-                    await command_model.insert_single(agent_id, user_id, {command: {
-                        type: "stop_server_log_stream",
-                        request_id: request_id,
-                        server_id: server_id
-                    }})
+                    await command_model.insert_single(agent_id, user_id, {
+                        command: {
+                            type: 'stop_server_log_stream',
+                            request_id: request_id,
+                            server_id: server_id,
+                        },
+                    })
                 } catch (error) {
                     logger.error({err: error}, 'Error on sending stop log command')
                 }
-
             }
 
             const sse = create_stream(res, {
@@ -81,11 +84,13 @@ export const stream_logs_by_agent_id = ({agent_id_path = 'agent_id', session_id_
             const logs_history_lines = get_path(res, logs_history_lines_path)
             const request_id = uuid()
 
-            await command_model.insert_single(agent_id, user_id, {command: {
-                type: "start_agent_log_stream",
-                logs_history_lines: logs_history_lines,
-                request_id: request_id,
-            }})
+            await command_model.insert_single(agent_id, user_id, {
+                command: {
+                    type: 'start_agent_log_stream',
+                    logs_history_lines: logs_history_lines,
+                    request_id: request_id,
+                },
+            })
 
             const event_names = [`log:agent:${agent_id}`]
 
@@ -105,14 +110,15 @@ export const stream_logs_by_agent_id = ({agent_id_path = 'agent_id', session_id_
                 })
                 subscriptions.clear()
                 try {
-                    await command_model.insert_single(agent_id, user_id, {command: {
-                        type: "stop_agent_log_stream",
-                        request_id: request_id
-                    }})
+                    await command_model.insert_single(agent_id, user_id, {
+                        command: {
+                            type: 'stop_agent_log_stream',
+                            request_id: request_id,
+                        },
+                    })
                 } catch (error) {
                     logger.error({err: error}, 'Error on sending stop log command')
                 }
-
             }
 
             const sse = create_stream(res, {

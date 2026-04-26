@@ -1,6 +1,6 @@
-import pool from '../services/db.js'
+import pool from '../providers/db.js'
 import {format_columns_select, filter_object} from '../utils.js'
-import {db_events} from '../services/events.js'
+import {db_events} from '../providers/events.js'
 import {COMMAND_COLUMNS} from '../configs/constants.js'
 import {v7 as uuid} from 'uuid'
 
@@ -10,7 +10,8 @@ export const select_by_agent_id_and_mark_sent = async (agent_id, columns) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT BIN_TO_UUID(Agent.team_id) AS team_id, ${formatted_command_columns}
             FROM Command
             INNER JOIN Agent ON Command.agent_id = Agent.agent_id
@@ -24,14 +25,15 @@ export const select_by_agent_id_and_mark_sent = async (agent_id, columns) => {
         }
         const command_ids = select_results.map((command) => command.command_id)
         const placeholders = command_ids.map(() => 'UUID_TO_BIN(?)').join(', ')
-        await connection.execute(`
+        await connection.execute(
+            `
             UPDATE Command SET command_status = 'sent', revision = revision + 1
             WHERE command_id IN (${placeholders})`,
-            command_ids
+            command_ids,
         )
         await connection.commit()
         const filtered_results = select_results.map((command) => {
-            const payload = { ...command, command_status: 'sent' }
+            const payload = {...command, command_status: 'sent'}
             db_events.emit(`update:command:command:${payload.command_id}`, payload)
             db_events.emit(`update:command:agent:${payload.agent_id}`, payload)
             db_events.emit(`update:command:team:${payload.team_id}`, payload)
@@ -64,16 +66,20 @@ export const insert_single = async (agent_id, user_id, data) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        await pool.execute(
-            `INSERT INTO Command (command_id, agent_id, user_id, command, command_status) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-            [command_id, agent_id, user_id, JSON.stringify(data.command), command_status]
-        )
-        const [select_results] = await pool.execute(`
+        await pool.execute(`INSERT INTO Command (command_id, agent_id, user_id, command, command_status) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`, [
+            command_id,
+            agent_id,
+            user_id,
+            JSON.stringify(data.command),
+            command_status,
+        ])
+        const [select_results] = await pool.execute(
+            `
             SELECT BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_command_columns}
             FROM Command
             INNER JOIN Agent ON Command.agent_id = Agent.agent_id
             WHERE Command.command_id = UUID_TO_BIN(?)`,
-            [command_id]
+            [command_id],
         )
         await connection.commit()
         const payload = select_results[0]
@@ -103,21 +109,23 @@ export const update_by_command_id = async (command_id, data, columns) => {
     const connection = await pool.getConnection()
     try {
         await connection.beginTransaction()
-        const [update_results] = await connection.execute(`
+        const [update_results] = await connection.execute(
+            `
             UPDATE Command SET ${fields.join(', ')}, revision = revision + 1
             WHERE command_id = UUID_TO_BIN(?)`,
-            [...values, command_id]
+            [...values, command_id],
         )
         if (update_results.affectedRows === 0) {
             await connection.rollback()
             return update_results
         }
-        const [select_results] = await connection.execute(`
+        const [select_results] = await connection.execute(
+            `
             SELECT BIN_TO_UUID(Agent.team_id) as team_id, ${formatted_command_columns}
             FROM Command
             INNER JOIN Agent ON Command.agent_id = Agent.agent_id
             WHERE Command.command_id = UUID_TO_BIN(?)`,
-            [command_id]
+            [command_id],
         )
         await connection.commit()
         const payload = select_results[0]

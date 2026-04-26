@@ -1,9 +1,9 @@
 import crypto from 'node:crypto'
 import ms from 'ms'
-import logger from './services/logger.js'
+import logger from './providers/logger.js'
 import {SLUG_LENGTH, SSE_HEARTBEAT_INTERVAL} from './configs/constants.js'
 import {predicates, objects} from 'friendly-words'
-import {redis_client} from './services/redis.js'
+import {redis_client} from './providers/redis.js'
 
 const sse_heartbeat_interval = ms(SSE_HEARTBEAT_INTERVAL)
 
@@ -153,7 +153,7 @@ export const format_columns_select = (columns, prefix = '') => {
 }
 
 export const compare_versions = (a, b) => {
-    const parse = (v) => v.split(/[.-]/).map(part => /^\d+$/.test(part) ? parseInt(part, 10) : part);
+    const parse = (v) => v.split(/[.-]/).map((part) => (/^\d+$/.test(part) ? parseInt(part, 10) : part))
     const parts_a = parse(a)
     const parts_b = parse(b)
 
@@ -166,9 +166,7 @@ export const compare_versions = (a, b) => {
 
         if (typeof part_a === 'number' && typeof part_b === 'number') {
             if (part_a !== part_b) return part_a - part_b
-        } 
-
-        else if (part_a !== part_b) {
+        } else if (part_a !== part_b) {
             return String(part_a).localeCompare(String(part_b))
         }
     }

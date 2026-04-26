@@ -1,7 +1,7 @@
 import * as module_model from '../models/moduleModel.js'
-import {db_events} from '../services/events.js'
+import {db_events} from '../providers/events.js'
 import {get_path, set_path, create_stream, filter_object} from '../utils.js'
-import logger from '../services/logger.js'
+import logger from '../providers/logger.js'
 
 export const create_module = ({module_data_path = 'module_data', server_id_path = 'server_id'} = {}) => {
     return async (req, res, next) => {

@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as password_handler from '../middlewares/passwordHandler.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
 import * as global_controller from '../controllers/globalController.js'
@@ -34,7 +34,7 @@ router.post(
     session_handler.verify_session_token(),
     session_handler.delete_session_by_session_id(),
     session_handler.delete_token_cookies(),
-    global_controller.send_empty()
+    global_controller.send_empty(),
 )
 
 // Logout from all devices (user)
@@ -44,7 +44,7 @@ router.post(
     session_handler.verify_session_token(),
     session_handler.delete_session_by_user_id(),
     session_handler.delete_token_cookies(),
-    global_controller.send_empty()
+    global_controller.send_empty(),
 )
 
 export default router

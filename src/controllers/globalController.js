@@ -1,6 +1,6 @@
 import {get_path} from '../utils.js'
 import {validate as validate_uuid} from 'uuid'
-import logger from '../services/logger.js'
+import logger from '../providers/logger.js'
 import {SERVER_STATUS, COMMAND_STATUS, AGENT_STATUS, MODULE_TYPES} from '../configs/constants.js'
 
 // === Request handlers ===

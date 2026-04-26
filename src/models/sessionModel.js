@@ -1,6 +1,6 @@
-import async_pool_ from '../services/db.js'
+import async_pool_ from '../providers/db.js'
 import ms from 'ms'
-import {redis_client} from '../services/redis.js'
+import {redis_client} from '../providers/redis.js'
 import {USER_REFRESH_TOKEN_GRACE_PERIOD, USER_TOKEN_DURATION} from '../configs/constants.js'
 
 const user_refresh_token_grace_period = ms(USER_REFRESH_TOKEN_GRACE_PERIOD) / 1000

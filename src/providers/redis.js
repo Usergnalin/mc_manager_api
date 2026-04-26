@@ -1,5 +1,5 @@
 import redis from 'redis'
-import {redis_events} from '../services/events.js'
+import {redis_events} from '../providers/events.js'
 
 const redis_client = redis.createClient({
     url: `redis://${process.env.REDIS_HOST}:6379/0`,

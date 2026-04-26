@@ -1,6 +1,6 @@
 import express from 'express'
 const router = express.Router()
-import * as rate_limiter from '../services/rateLimiter.js'
+import * as rate_limiter from '../providers/rateLimiter.js'
 import * as global_controller from '../controllers/globalController.js'
 import * as server_version_controller from '../controllers/serverVersionController.js'
 
@@ -14,11 +14,6 @@ router.get(
 )
 
 // Get all MC versions
-router.get(
-    '/',
-    rate_limiter.normal,
-    server_version_controller.get_mc_versions(),
-    global_controller.send_data({data_path: 'mc_versions'}),
-)
+router.get('/', rate_limiter.normal, server_version_controller.get_mc_versions(), global_controller.send_data({data_path: 'mc_versions'}))
 
 export default router
