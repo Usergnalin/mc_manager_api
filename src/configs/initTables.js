@@ -4,6 +4,10 @@ import {redis_client, initialise_redis} from '../providers/redis.js'
 import {COMMAND_STATUS, SERVER_STATUS, AGENT_STATUS, TEAM_ROLES, MODULE_TYPES} from '../configs/constants.js'
 
 const SQLSTATEMENT = `
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS Identity;
 DROP TABLE IF EXISTS Module;
 DROP TABLE IF EXISTS Session;
 DROP TABLE IF EXISTS UserTeam;
@@ -16,10 +20,22 @@ DROP TABLE IF EXISTS Team;
 CREATE TABLE User (
     user_id BINARY(16) PRIMARY KEY,
     username VARCHAR(63) NOT NULL UNIQUE,
-    password VARCHAR(63) NOT NULL,
+    password VARCHAR(63) NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     revision BIGINT UNSIGNED NOT NULL DEFAULT 0
+);
+
+CREATE TABLE Identity (
+    identity_id BINARY(16) PRIMARY KEY,
+    user_id BINARY(16) NOT NULL,
+    provider_user_id VARCHAR(255) NOT NULL,
+    provider VARCHAR(63) NOT NULL,
+    created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
+    UNIQUE (provider, provider_user_id)
 );
 
 CREATE TABLE Session (
@@ -90,7 +106,8 @@ CREATE TABLE Server (
     agent_id BINARY(16) NOT NULL,
     server_name VARCHAR(255) NOT NULL,
     properties JSON NOT NULL,
-    status ENUM(${SERVER_STATUS.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'offline',
+    server_status ENUM(${SERVER_STATUS.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'offline',
+    server_thumbnail VARCHAR(1023) NULL,
     last_online DATETIME NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
@@ -112,18 +129,7 @@ CREATE TABLE Module (
     INDEX (server_id)
 );
 
-DELIMITER //
-
-CREATE EVENT clean_old_commands
-ON SCHEDULE EVERY 1 HOUR
-DO
-BEGIN
-    DELETE FROM Command 
-    WHERE created_at < NOW() - INTERVAL 1 DAY
-    LIMIT 1000;
-END //
-
-DELIMITER ;
+SET FOREIGN_KEY_CHECKS = 1;
 `
 
 const init_tables = async () => {

@@ -13,8 +13,7 @@ const start_server = async () => {
         await agent_startup()
         const fetch_loaders = new Queue('fetch_loaders')
         fetch_loaders.add(
-            'fetch_loaders',
-            {},
+            'fetch_loaders', {},
             {
                 repeat: {every: ms(LOADER_UPDATE_INTERVAL)},
             },

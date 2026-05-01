@@ -84,6 +84,7 @@ router.delete(
     '/:agent_id',
     rate_limiter.normal,
     session_handler.verify_session_token(),
+    global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin']}),
     agent_controller.delete_agent_by_agent_id(),
     global_controller.send_empty(),

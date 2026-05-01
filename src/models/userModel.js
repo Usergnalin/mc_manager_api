@@ -1,6 +1,6 @@
 import pool from '../providers/db.js'
 import {v7 as uuid} from 'uuid'
-import {generate_slug, format_columns_select} from '../utils.js'
+import {generate_slug, generate_phrase, format_columns_select} from '../utils.js'
 
 export const insert_single = async (data) => {
     const connection = await pool.getConnection()
@@ -25,6 +25,46 @@ export const insert_single = async (data) => {
             `INSERT INTO UserTeam (user_id, team_id, role)
             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
             [user_id, team_id, 'admin'],
+        )
+        await connection.commit()
+        return {user_id, team_id, slug}
+    } catch (error) {
+        await connection.rollback()
+        throw error
+    } finally {
+        connection.release()
+    }
+}
+
+export const insert_single_with_identity = async (provider, provider_user_id) => {
+    const connection = await pool.getConnection()
+    try {
+        const user_id = uuid()
+        const team_id = uuid()
+        const identity_id = uuid()
+        const username = generate_phrase()
+        const slug = generate_slug()
+        const team_name = `${username}'s Team`
+        await connection.beginTransaction()
+        await connection.query(`
+            INSERT INTO User (user_id, username)
+            VALUES (UUID_TO_BIN(?), ?)`,
+            [user_id, username],
+        )
+        await connection.query(
+            `INSERT INTO Team (team_id, team_name, slug)
+            VALUES (UUID_TO_BIN(?), ?, ?)`,
+            [team_id, team_name, slug],
+        )
+        await connection.query(
+            `INSERT INTO UserTeam (user_id, team_id, role)
+            VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+            [user_id, team_id, 'admin'],
+        )
+        await connection.query(
+            `INSERT INTO Identity (identity_id, user_id, provider_user_id, provider)
+            VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
+            [identity_id, user_id, provider_user_id, provider],
         )
         await connection.commit()
         return {user_id, team_id, slug}

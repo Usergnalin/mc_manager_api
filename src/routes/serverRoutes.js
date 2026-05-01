@@ -24,9 +24,9 @@ router.put(
     rate_limiter.normal,
     agent_auth_handler.verify_agent_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    global_controller.load_body_data({fields: ['status'], data_path: 'server_data'}),
+    global_controller.load_body_data({fields: ['server_status'], data_path: 'server_data'}),
     server_controller.check_access_by_agent_id(),
-    server_controller.update_by_server_id({fields: ['status']}),
+    server_controller.update_by_server_id({fields: ['server_status']}),
     global_controller.send_empty(),
 )
 
@@ -39,6 +39,18 @@ router.put(
     global_controller.load_body_data({fields: ['properties'], data_path: 'server_data'}),
     server_controller.check_access_by_agent_id(),
     server_controller.update_by_server_id({fields: ['properties']}),
+    global_controller.send_empty(),
+)
+
+// Update server thumbnail (agent)
+router.put(
+    '/:server_id/thumbnail/agent',
+    rate_limiter.normal,
+    agent_auth_handler.verify_agent_token(),
+    global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
+    global_controller.load_body_data({fields: ['server_thumbnail'], data_path: 'server_data'}),
+    server_controller.check_access_by_agent_id(),
+    server_controller.update_by_server_id({fields: ['server_thumbnail']}),
     global_controller.send_empty(),
 )
 
@@ -60,7 +72,7 @@ router.get(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
     server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
-    server_controller.get_server_by_server_id({fields: ['server_name', 'properties', 'status', 'revision', 'last_online']}),
+    server_controller.get_server_by_server_id({fields: ['server_name', 'properties', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
     global_controller.send_data({data_path: 'server_data'}),
 )
 
@@ -71,7 +83,7 @@ router.get(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
-    server_controller.get_server_by_agent_id({fields: ['server_id', 'server_name', 'status', 'revision', 'last_online']}),
+    server_controller.get_server_by_agent_id({fields: ['server_id', 'server_name', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
     global_controller.send_data({data_path: 'server_data'}),
 )
 
@@ -82,7 +94,7 @@ router.get(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
-    server_controller.stream_server_by_agent_id({fields: ['server_id', 'server_name', 'status', 'revision', 'last_online']}),
+    server_controller.stream_server_by_agent_id({fields: ['server_id', 'server_name', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
 )
 
 // Stream server details by server id (user)
@@ -92,7 +104,7 @@ router.get(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
     server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
-    server_controller.stream_server_by_server_id({fields: ['server_name', 'status', 'properties', 'revision', 'last_online']}),
+    server_controller.stream_server_by_server_id({fields: ['server_name', 'server_status', 'properties', 'server_thumbnail', 'revision', 'last_online']}),
 )
 
 // Stream server logs by server_id (user)

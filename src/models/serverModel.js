@@ -5,51 +5,6 @@ import {SERVER_COLUMNS} from '../configs/constants.js'
 
 const formatted_server_columns = format_columns_select(SERVER_COLUMNS, 'Server')
 
-// export const insert_single = (data, callback) => {
-//     const statement = `
-//     INSERT INTO Server (server_id, agent_id, server_name, properties)
-//     VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)
-//     `
-//     const values = [data.server_id, data.agent_id, data.server_name, JSON.stringify(data.properties)]
-//     pool.query(statement, values, (error, results) => {
-//         if (error) {
-//             return callback(error, null)
-//         }
-//         const payload = JSON.stringify(data)
-//         db_events.emit(`create:server:server:${data.server_id}`, payload)
-//         db_events.emit(`create:server:agent:${data.agent_id}`, payload)
-//         callback(null, results)
-//     })
-// }
-
-// export const insert_single = async (agent_id, data) => {
-//     const connection = await pool.getConnection()
-//     try {
-//         await connection.beginTransaction()
-//         const [select_results] = await connection.execute(`
-//             SELECT BIN_TO_UUID(team_id) as team_id FROM Agent WHERE agent_id = UUID_TO_BIN(?)`,
-//             [agent_id]
-//         )
-//         const team_id = select_results[0].team_id
-//         const [results] = await connection.execute(`
-//             INSERT INTO Server (server_id, agent_id, server_name, properties)
-//             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-//             [data.server_id, agent_id, data.server_name, JSON.stringify(data.properties)],
-//         )
-//         await connection.commit()
-//         const payload = {...data, agent_id, team_id}
-//         db_events.emit(`create:server:server:${data.server_id}`, payload)
-//         db_events.emit(`create:server:agent:${agent_id}`, payload)
-//         db_events.emit(`create:server:team:${team_id}`, payload)
-//         return {...results, data: payload}
-//     } catch (error) {
-//         await connection.rollback()
-//         throw error
-//     } finally {
-//         connection.release()
-//     }
-// }
-
 export const check_access_by_agent_id = async (server_id, agent_id) => {
     const results = await pool.query(
         `
@@ -95,125 +50,6 @@ export const check_access_by_user_id_and_role = async (server_id, user_id, role)
     return results[0][0]
 }
 
-// export const update_by_server_id = async (server_id, data, columns) => {
-//     const fields = []
-//     const values = []
-//     columns.forEach((column) => {
-//         if (data[column] !== undefined) {
-//             let value = data[column]
-//             if (column === 'properties') {
-//                 value = JSON.stringify(value)
-//             }
-//             fields.push(`${column} = ?`)
-//             values.push(value)
-//         }
-//     })
-//     const connection = await pool.getConnection()
-//     try {
-//         await connection.beginTransaction()
-//         const [select_results] = await connection.execute(`
-//             SELECT
-//                 BIN_TO_UUID(Server.agent_id) as agent_id,
-//                 BIN_TO_UUID(Agent.team_id) as team_id
-//             FROM Server
-//             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
-//             WHERE Server.server_id = UUID_TO_BIN(?)
-//             FOR UPDATE`,
-//             [server_id]
-//         )
-//         if (select_results.length === 0) {
-//             await connection.rollback()
-//             return {affectedRows: 0}
-//         }
-//         const agent_id = select_results[0].agent_id
-//         const team_id = select_results[0].team_id
-//         const [update_results] = await connection.execute(`
-//             UPDATE Server SET ${fields.join(', ')} WHERE server_id = UUID_TO_BIN(?)`,
-//             [...values, server_id]
-//         )
-//         await connection.commit()
-//         const payload = {...data, agent_id, server_id, team_id}
-//         db_events.emit(`update:server:server:${server_id}`, payload)
-//         db_events.emit(`update:server:agent:${agent_id}`, payload)
-//         db_events.emit(`update:server:team:${team_id}`, payload)
-//         return update_results
-//     } catch (error) {
-//         await connection.rollback()
-//         throw error
-//     } finally {
-//         connection.release()
-//     }
-// }
-
-// export const delete_by_server_id = async (server_id) => {
-//     const connection = await pool.getConnection()
-//     try {
-//         await connection.beginTransaction()
-//         const [select_results] = await connection.execute(`
-//             SELECT
-//                 BIN_TO_UUID(Server.agent_id) as agent_id,
-//                 BIN_TO_UUID(Agent.team_id) as team_id
-//             FROM Server
-//             INNER JOIN Agent ON Server.agent_id = Agent.agent_id
-//             WHERE Server.server_id = UUID_TO_BIN(?)
-//             FOR UPDATE`,
-//             [server_id]
-//         )
-//         if (select_results.length === 0) {
-//             await connection.rollback()
-//             return {affectedRows: 0}
-//         }
-//         const agent_id = select_results[0].agent_id
-//         const team_id = select_results[0].team_id
-//         const [delete_results] = await connection.execute(
-//             'DELETE FROM Server WHERE server_id = UUID_TO_BIN(?)',
-//             [server_id]
-//         )
-//         await connection.commit()
-//         const payload = {agent_id, server_id, team_id}
-//         db_events.emit(`delete:server:server:${server_id}`, payload)
-//         db_events.emit(`delete:server:agent:${agent_id}`, payload)
-//         db_events.emit(`delete:server:team:${team_id}`, payload)
-//         return delete_results
-//     } catch (error) {
-//         await connection.rollback()
-//         throw error
-//     } finally {
-//         connection.release()
-//     }
-// }
-
-// export const select_by_server_id = (data, columns, callback) => {
-//     const formatted_columns = columns.map((column) => {
-//         if (column === 'server_id') return 'BIN_TO_UUID(server_id) AS server_id'
-//         return column
-//     })
-//     const statement = `
-//     SELECT ${formatted_columns.join(', ')}
-//     FROM Server
-//     WHERE server_id = UUID_TO_BIN(?)
-//     `
-//     const values = [data.server_id]
-//     pool.query(statement, values, callback)
-// }
-
-// export const insert_single = async (agent_id, data) => {
-//     const [select_results] = await pool.execute(
-//         `SELECT BIN_TO_UUID(team_id) as team_id FROM Agent WHERE agent_id = UUID_TO_BIN(?)`,
-//         [agent_id]
-//     )
-//     const team_id = select_results[0].team_id
-//     const [results] = await pool.execute(
-//         `INSERT INTO Server (server_id, agent_id, server_name, properties) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-//         [data.server_id, agent_id, data.server_name, JSON.stringify(data.properties)]
-//     )
-//     const payload = {...data, agent_id, team_id}
-//     db_events.emit(`create:server:server:${data.server_id}`, payload)
-//     db_events.emit(`create:server:agent:${agent_id}`, payload)
-//     db_events.emit(`create:server:team:${team_id}`, payload)
-//     return {...results, data: payload}
-// }
-
 export const insert_single = async (agent_id, data) => {
     const connection = await pool.getConnection()
     try {
@@ -255,7 +91,7 @@ export const update_by_server_id = async (server_id, data, columns) => {
             if (column === 'properties') value = JSON.stringify(value)
             fields.push(`${column} = ?`)
             values.push(value)
-            if (column === 'status' && data[column] === 'offline') {
+            if (column === 'server_status' && data[column] === 'offline') {
                 if (!fields.some((field) => field.startsWith('last_online'))) {
                     fields.push('last_online = NOW()')
                 }

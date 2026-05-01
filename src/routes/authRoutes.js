@@ -3,6 +3,7 @@ const router = express.Router()
 import * as rate_limiter from '../providers/rateLimiter.js'
 import * as password_handler from '../middlewares/passwordHandler.js'
 import * as session_handler from '../middlewares/sessionHandler.js'
+import * as oauth_handler from '../middlewares/oauthHandler.js'
 import * as global_controller from '../controllers/globalController.js'
 import * as user_controller from '../controllers/userController.js'
 
@@ -45,6 +46,27 @@ router.post(
     session_handler.delete_session_by_user_id(),
     session_handler.delete_token_cookies(),
     global_controller.send_empty(),
+)
+
+// Initalise google Oauth
+router.get(
+    '/google/init',
+    rate_limiter.normal,
+    oauth_handler.generate_oauth_url(),
+    global_controller.send_data({data_path: 'oauth_url'}),
+)
+
+router.get(
+    '/google/callback',
+    rate_limiter.normal,
+    global_controller.load_query_data({field: 'state', data_path: 'state'}),
+    oauth_handler.validate_nonce(),
+    global_controller.load_query_data({field: 'code', data_path: 'code'}),
+    oauth_handler.exchange_code(),
+    oauth_handler.get_or_create_oauth_user({provider: 'google'}),
+    session_handler.create_session(),
+    session_handler.generate_session_token(),
+    global_controller.redirect({url: 'https://gnalin.xyz:5174/dashboard'}),
 )
 
 export default router

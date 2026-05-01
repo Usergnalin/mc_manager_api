@@ -95,7 +95,7 @@ const validation_logic = {
         const trimmed = value.trim()
         return validate_uuid(trimmed) ? trimmed : null
     },
-    status: (value) => {
+    server_status: (value) => {
         if (typeof value !== 'string') return null
         const trimmed = value.trim().toLowerCase()
         if (!SERVER_STATUS.includes(trimmed)) return null
@@ -182,6 +182,20 @@ const validation_logic = {
         if (typeof value !== 'string') return null
         const trimmed = value.trim()
         return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
+    },
+    code: (value) => {
+        if (typeof value !== 'string') return null
+        const trimmed = value.trim()
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
+    },
+    state: (value) => {
+        if (typeof value !== 'string') return null
+        const trimmed = value.trim()
+        return trimmed.length > 0 && trimmed.length <= 255 ? trimmed : null
+    },
+    server_thumbnail: (value) => {
+        if (typeof value !== 'string') return null
+        return value.length > 0 && value.length <= 1023 ? value : null
     },
 }
 export const load_body_data = ({fields, data_path, bulk = false} = {}) => {
@@ -288,6 +302,16 @@ export const send_empty = () => {
     return async (req, res, next) => {
         try {
             res.status(204).send()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
+export const redirect = ({url} = {}) => {
+    return async (req, res, next) => {
+        try {
+            res.redirect(url)
         } catch (error) {
             next(error)
         }

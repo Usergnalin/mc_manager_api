@@ -25,7 +25,7 @@ router.get(
     team_controller.get_all_data_by_team_id({
         agent_fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
         command_fields: ['agent_id', 'command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
-        server_fields: ['agent_id', 'server_id', 'server_name', 'status', 'properties', 'revision', 'last_online'],
+        server_fields: ['agent_id', 'server_id', 'server_name', 'server_status', 'server_thumbnail', 'properties', 'revision', 'last_online'],
         module_fields: ['server_id', 'module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision'],
     }),
     global_controller.send_data({data_path: 'data'}),
@@ -41,7 +41,7 @@ router.get(
     team_controller.stream_all_data_by_team_id({
         agent_fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision'],
         command_fields: ['agent_id', 'command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
-        server_fields: ['agent_id', 'server_id', 'server_name', 'status', 'properties', 'revision'],
+        server_fields: ['agent_id', 'server_id', 'server_name', 'server_status', 'server_thumbnail', 'properties', 'revision'],
         module_fields: ['server_id', 'module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision'],
     }),
 )

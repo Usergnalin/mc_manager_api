@@ -3,7 +3,7 @@
 export const COMMAND_COLUMNS = ['command_id', 'agent_id', 'user_id', 'command', 'command_status', 'revision', 'created_at', 'updated_at', 'command_feedback']
 export const AGENT_COLUMNS = ['agent_id', 'team_id', 'agent_name', 'agent_status', 'last_online', 'public_key', 'revision', 'created_at', 'updated_at']
 export const MODULE_COLUMNS = ['module_id', 'server_id', 'module_name', 'module_enabled', 'module_type', 'module_metadata', 'revision', 'created_at', 'updated_at']
-export const SERVER_COLUMNS = ['server_id', 'agent_id', 'server_name', 'properties', 'status', 'last_online', 'revision', 'created_at', 'updated_at']
+export const SERVER_COLUMNS = ['server_id', 'agent_id', 'server_name', 'server_thumbnail', 'properties', 'server_status', 'last_online', 'revision', 'created_at', 'updated_at']
 
 export const COMMAND_STATUS = ['pending', 'queued', 'sent', 'success', 'failure']
 export const SERVER_STATUS = ['online', 'offline', 'starting', 'stopping']
@@ -29,6 +29,8 @@ export const SALT_ROUNDS = 10
 export const SECURE_COOKIE = true
 // Minimum zxcvbn password score accepted
 export const PASSWORD_MIN_SCORE = 2
+// Period of time where Oauth nonces are kept, nonces older than this are rejected on callback
+export const OAUTH_NONCE_MAX_DURATION = '10m'
 
 // --- SSE streams ---
 
@@ -85,6 +87,8 @@ export const CONSTANTS = {
     AGENT_COLUMNS,
     MODULE_COLUMNS,
     SERVER_COLUMNS,
+    OAUTH_NONCE_MAX_DURATION,
+    LOADER_UPDATE_INTERVAL,
 }
 
 export const read_constants = async (req, res, next) => {
