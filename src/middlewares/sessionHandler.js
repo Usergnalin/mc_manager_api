@@ -36,10 +36,11 @@ export const create_session = ({user_id_path = 'user_id', output_session_id_path
             }
             await session_model.insert_single(user_id, {session_id, refresh_token: refresh_token_hash, refresh_token_duration: user_refresh_token_duration})
             res.cookie('refresh_token', refresh_token, {
+                domain: `.${process.env.DOMAIN}`,
                 path: '/auth',
                 httpOnly: true,
                 secure: true,
-                sameSite: 'strict',
+                sameSite: 'lax',
             })
             set_path(res, output_session_id_path, session_id)
             next()
@@ -75,10 +76,11 @@ export const rotate_session = ({output_user_id_path = 'user_id', output_session_
             const results = await session_model.refresh_token({session_id, old_refresh_token_hash, new_refresh_token_hash, new_refresh_token})
             if (results.status === 'use_cached') {
                 res.cookie('refresh_token', results.refresh_token, {
+                    domain: `.${process.env.DOMAIN}`,
                     path: '/auth',
                     httpOnly: true,
                     secure: true,
-                    sameSite: 'strict',
+                    sameSite: 'lax',
                 })
                 set_path(res, output_user_id_path, results.user_id)
                 set_path(res, output_session_id_path, session_id)
@@ -89,10 +91,11 @@ export const rotate_session = ({output_user_id_path = 'user_id', output_session_
                 return res.status(401).json({message: 'Session expired'})
             } else if (results.status === 'success') {
                 res.cookie('refresh_token', new_refresh_token, {
+                    domain: `.${process.env.DOMAIN}`,
                     path: '/auth',
                     httpOnly: true,
                     secure: true,
-                    sameSite: 'strict',
+                    sameSite: 'lax',
                 })
                 set_path(res, output_user_id_path, results.user_id)
                 set_path(res, output_session_id_path, session_id)
@@ -151,10 +154,11 @@ export const generate_session_token = ({user_id_path = 'user_id', session_id_pat
             }
             const session_token = jwt.sign(payload, token_secret, options)
             res.cookie('session_token', session_token, {
+                domain: `.${process.env.DOMAIN}`,
                 path: '/',
                 httpOnly: true,
                 secure: true,
-                sameSite: 'strict',
+                sameSite: 'lax',
                 maxAge: user_token_duration_ms,
             })
             next()
@@ -191,16 +195,18 @@ export const delete_session_by_user_id = ({user_id_path = 'user_id'} = {}) => {
 export const delete_token_cookies = () => {
     return async (req, res, next) => {
         res.clearCookie('session_token', {
+            domain: `.${process.env.DOMAIN}`,
             path: '/',
             httpOnly: true,
             secure: true,
-            sameSite: 'strict',
+            sameSite: 'lax',
         })
         res.clearCookie('refresh_token', {
+            domain: `.${process.env.DOMAIN}`,
             path: '/auth',
             httpOnly: true,
             secure: true,
-            sameSite: 'strict',
+            sameSite: 'lax',
         })
         next()
     }

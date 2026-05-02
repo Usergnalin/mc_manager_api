@@ -66,7 +66,7 @@ router.get(
     oauth_handler.get_or_create_oauth_user({provider: 'google'}),
     session_handler.create_session(),
     session_handler.generate_session_token(),
-    global_controller.redirect({url: `https://${process.env.VITE_PANEL_BASE}/dashboard`}),
+    global_controller.redirect({url: `https://${process.env.PANEL_BASE}/dashboard`}),
 )
 
 export default router

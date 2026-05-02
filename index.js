@@ -14,7 +14,6 @@ const start_server = async () => {
         await agent_startup()
         const fetch_loaders = new Queue('fetch_loaders', {connection: {host: process.env.REDIS_HOST, port: 6379}})
         fetch_loaders.add('fetch_loaders', {},  {repeat: { every: ms(LOADER_UPDATE_INTERVAL) }})
-        fetch_loaders.add('fetch_loaders', { isInitial: true }, { jobId: `initial-run-${Date.now()}` })
         const {default: app} = await import('./src/app.js')
         app.listen(app_port, () => logger.info({port: app_port}, 'Server successfully started'))
     } catch (error) {

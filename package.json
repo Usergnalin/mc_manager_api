@@ -7,9 +7,9 @@
     "scripts": {
         "init_tables": "dotenv -e .env -- node src/configs/initTables.js",
         "stop": "sudo systemctl stop webserver && sudo kill -9 $(lsof -t -i :3000) || true",
-        "start": "dotenv -e .env -- node index.js",
+        "start": "dotenv -e .env -e ../.env -- node index.js",
         "restart": "npm run stop && npm run start",
-        "clean_code": "prettier --write ."
+        "clean_code": "prettier --write ." 
     },
     "repository": {
         "type": "git",

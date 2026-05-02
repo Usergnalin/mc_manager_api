@@ -18,7 +18,7 @@ const content_security_policy = {
         'font-src': ["'self'", 'https://fonts.gstatic.com'],
         'connect-src': [
             "'self'", 
-            `https://${process.env.VITE_API_BASE}`,
+            `https://${process.env.API_BASE}`,
             'https://accounts.google.com'
         ],
         'object-src': ["'none'"],
@@ -36,7 +36,7 @@ app.use(
     }),
 )
 
-const allowedOrigins = [`https://www.${process.env.VITE_PANEL_BASE}`, `https://${process.env.VITE_PANEL_BASE}`]
+const allowedOrigins = [`https://www.${process.env.PANEL_BASE}`, `https://${process.env.PANEL_BASE}`]
 
 app.use(
     cors({

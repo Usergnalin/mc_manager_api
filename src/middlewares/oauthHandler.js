@@ -18,7 +18,7 @@ export const generate_oauth_url = ({oauth_url_path = "oauth_url"} = {}) => {
             await redis_client.set(`oauth_nonce:${oauth_nonce}`, '1', "EX", nonce_duration_s)
             const url = new URL(process.env.OAUTH_AUTH_URL)
             url.searchParams.set('client_id', process.env.OAUTH_CLIENT_ID)
-            url.searchParams.set('redirect_uri', `https://${process.env.VITE_API_BASE}/auth/google/callback`)
+            url.searchParams.set('redirect_uri', `https://${process.env.API_BASE}/auth/google/callback`)
             url.searchParams.set('response_type', 'code')
             url.searchParams.set('scope', 'openid')
             url.searchParams.set('state', oauth_nonce)
@@ -58,7 +58,7 @@ export const exchange_code = ({code_path = "code", provider_user_id_path = "prov
                     code,
                     client_id: process.env.OAUTH_CLIENT_ID,
                     client_secret: process.env.OAUTH_CLIENT_SECRET,
-                    redirect_uri: `https://${process.env.VITE_API_BASE}/auth/google/callback`,
+                    redirect_uri: `https://${process.env.API_BASE}/auth/google/callback`,
                     grant_type: 'authorization_code',
                 })
             })
