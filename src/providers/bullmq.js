@@ -1,6 +1,6 @@
 import {Worker} from 'bullmq'
 import fetch_loaders from '../services/fetchLoaders.js'
-import {redis_client} from '../providers/redisConnection.js'
+import {redis_client} from '../providers/redis.js'
 
 const _worker = new Worker(
     'fetch_loaders',
@@ -9,5 +9,7 @@ const _worker = new Worker(
     },
     {
         connection: redis_client,
-    },
+        lockDuration: 600000,
+        stalledInterval: 600000,
+    }
 )

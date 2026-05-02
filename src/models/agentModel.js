@@ -11,7 +11,7 @@ const formatted_agent_columns = format_columns_select(AGENT_COLUMNS, 'Agent')
 
 export const insert_by_linking_code = async (linking_code, data) => {
     const redis_key = `linking_code:${linking_code}`
-    const team_id = await redis_client.getDel(redis_key)
+    const team_id = await redis_client.getdel(redis_key)
     const agent_status = 'offline'
     if (team_id === null) {
         return null
@@ -173,8 +173,6 @@ export const check_access_by_user_id_and_role = async (user_id, agent_id, role) 
 
 export const create_linking_code = async (team_id) => {
     const linking_code = generate_phrase()
-    await redis_client.set(`linking_code:${linking_code}`, team_id, {
-        EX: linking_code_expiry,
-    })
+    await redis_client.set(`linking_code:${linking_code}`, team_id, "EX", linking_code_expiry)
     return linking_code
 }

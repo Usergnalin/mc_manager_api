@@ -151,9 +151,7 @@ export const stream_command_by_agent_id_and_mark_sent = ({fields, agent_id_path 
                 session_expiry: res.locals.session_expiry,
                 on_heartbeat: (stop) => {
                     redis_client_presence
-                        .set(`agent:presence:${agent_id}`, 1, {
-                            EX: agent_heartbeat_expiry / 1000,
-                        })
+                        .set(`agent:presence:${agent_id}`, 1, "EX", agent_heartbeat_expiry / 1000)
                         .catch(stop)
                 },
                 on_close,

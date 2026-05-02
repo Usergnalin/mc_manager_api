@@ -10,7 +10,7 @@ export const slow = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        sendCommand: (...args) => redis_client.sendCommand(args),
+        sendCommand: (...args) => redis_client.call(...args),
         prefix: 'ratelimit:slow:',
     }),
 })
@@ -21,7 +21,7 @@ export const normal = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        sendCommand: (...args) => redis_client.sendCommand(args),
+        sendCommand: (...args) => redis_client.call(...args),
         prefix: 'ratelimit:normal:',
     }),
 })
@@ -32,7 +32,7 @@ export const fast = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-        sendCommand: (...args) => redis_client.sendCommand(args),
+        sendCommand: (...args) => redis_client.call(...args),
         prefix: 'ratelimit:fast:',
     }),
 })

@@ -17,7 +17,7 @@ export const insert_single = async (user_id, data) => {
 
 export const delete_by_session_id = async (session_id) => {
     await async_pool_.query(`DELETE FROM Session WHERE session_id = UUID_TO_BIN(?)`, [session_id])
-    await redis_client.set(`revoked_session:${session_id}`, 1, {EX: user_token_duration, NX: true})
+    await redis_client.set(`revoked_session:${session_id}`, 1, "NX", "EX", user_token_duration)
     return
 }
 
@@ -38,10 +38,7 @@ export const delete_by_user_id = async (user_id) => {
     }
     const pipeline = redis_client.multi()
     sessions.forEach((session) => {
-        pipeline.set(`revoked_session:${session.session_id}`, 1, {
-            EX: user_token_duration,
-            NX: true,
-        })
+        pipeline.set(`revoked_session:${session.session_id}`, 1, "NX", "EX", user_token_duration)
     })
     await pipeline.exec()
     return
@@ -68,10 +65,7 @@ export const refresh_token = async (data) => {
                 }
             } else {
                 await connection.execute('DELETE FROM Session WHERE session_id = UUID_TO_BIN(?)', [data.session_id])
-                await redis_client.set(`revoked_session:${data.session_id}`, 1, {
-                    EX: user_token_duration,
-                    NX: true,
-                })
+                await redis_client.set(`revoked_session:${data.session_id}`, 1, "NX", "EX", user_token_duration)
                 await connection.commit()
                 return {status: 'breach_detected'}
             }
@@ -92,10 +86,7 @@ export const refresh_token = async (data) => {
             refresh_token: data.new_refresh_token,
         })
 
-        await redis_client.set(`refresh:${data.old_refresh_token_hash}`, cached_data_string, {
-            EX: user_refresh_token_grace_period,
-            NX: true,
-        })
+        await redis_client.set(`refresh:${data.old_refresh_token_hash}`, cached_data_string, "NX", "EX", user_refresh_token_grace_period)
 
         await connection.commit()
         return {status: 'success', user_id: session.user_id}

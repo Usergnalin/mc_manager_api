@@ -1,4 +1,5 @@
 import {MODRINTH_USER_AGENT} from '../configs/constants.js'
+import logger from  '../providers/logger.js'
 import {update_versions} from '../models/serverVersionModel.js'
 import {compare_versions} from '../utils.js'
 
@@ -131,8 +132,8 @@ export default async () => {
             }
         }
     }
-
+    logger.info({}, 'Started Fetching Loaders')
     await Promise.all([fetch_fabric(), fetch_quilt(), fetch_neoforge(), fetch_forge()])
-
     await update_versions(mc_versions)
+    logger.info({}, 'Finished Fetching Loaders')
 }

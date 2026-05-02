@@ -14,12 +14,16 @@ const content_security_policy = {
         'default-src': ["'self'"],
         'script-src': ["'self'"],
         'style-src': ["'self'", 'https://fonts.googleapis.com'],
-        'img-src': ["'self'", 'data:', 'blob:', 'https://gnalin.xyz', 'https://www.gnalin.xyz'],
+        'img-src': ["'self'", 'data:', 'blob:', 'https:'],
         'font-src': ["'self'", 'https://fonts.gstatic.com'],
-        'connect-src': ["'self'"],
+        'connect-src': [
+            "'self'", 
+            `https://${process.env.VITE_API_BASE}`,
+            'https://accounts.google.com'
+        ],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
-        'form-action': ["'self'"],
+        'form-action': ["'self'", 'https://accounts.google.com'],
         'frame-ancestors': ["'none'"],
         'upgrade-insecure-requests': [],
     },
@@ -28,11 +32,11 @@ const content_security_policy = {
 app.use(
     helmet({
         contentSecurityPolicy: content_security_policy,
-        hsts: false,
+        hsts: true,
     }),
 )
 
-const allowedOrigins = ['https://www.gnalin.xyz', 'https://gnalin.xyz', 'https://gnalin.xyz:5174']
+const allowedOrigins = [`https://www.${process.env.VITE_PANEL_BASE}`, `https://${process.env.VITE_PANEL_BASE}`]
 
 app.use(
     cors({
@@ -52,15 +56,9 @@ app.use(pinoHttp({logger}))
 app.use(express.json({limit: JSON_MAX_BODY_SIZE}))
 app.use(express.urlencoded({extended: false}))
 app.use(cookieParser())
+app.set('trust proxy', 1)
 
-app.use('/api', mainRoutes)
-// app.use("/", express.static("public"))
-
-// app.use("/vendor/bootstrap", express.static("node_modules/bootstrap/dist"))
-// app.use("/vendor/icons", express.static("node_modules/bootstrap-icons/font"))
-// app.use("/vendor/zxcvbn", express.static("node_modules/zxcvbn/dist"))
-// app.use("/vendor/dompurify", express.static("node_modules/dompurify/dist"))
-// app.use("/vendor/marked", express.static("node_modules/marked/lib"))
+app.use('/', mainRoutes)
 
 app.use((req, res, _next) => {
     res.status(404).send('Page Not Found')

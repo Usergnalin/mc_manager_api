@@ -18,7 +18,7 @@ export const verify_nonce = () => {
             }
             const redis_key = `nonce:${nonce}`
             const expiry = Math.ceil(nonce_duration_ms / 1000) + 1
-            const result = await redis_client.set(redis_key, '1', {NX: true, EX: expiry})
+            const result = await redis_client.set(redis_key, '1', "NX", "EX", expiry)
             if (result !== 'OK') {
                 return res.status(401).json({message: 'Duplicate request'})
             }

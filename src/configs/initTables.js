@@ -135,7 +135,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 const init_tables = async () => {
     try {
         await initialise_redis()
-        await redis_client.flushAll()
+        await redis_client.flushall()
         logger.info({}, 'Redis flushed successfully')
         await pool.query(SQLSTATEMENT)
         logger.info({}, 'Tables initialised successfully')

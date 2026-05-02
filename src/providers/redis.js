@@ -1,29 +1,37 @@
-import redis from 'redis'
+import Redis from 'ioredis'
 import {redis_events} from '../providers/events.js'
 
-const redis_client = redis.createClient({
-    url: `redis://${process.env.REDIS_HOST}:6379/0`,
+const redis_client = new Redis({
+    host: process.env.REDIS_HOST,
+    port: 6379,
+    db: 0,
+    maxRetriesPerRequest: null,
 })
 
-const redis_client_presence = redis.createClient({
-    url: `redis://${process.env.REDIS_HOST}:6379/1`,
+const redis_client_presence = new Redis({
+    host: process.env.REDIS_HOST,
+    port: 6379,
+    db: 1,
 })
 
-const redis_expiration_listener = redis_client_presence.duplicate()
+const redis_expiration_listener = new Redis({
+    host: process.env.REDIS_HOST,
+    port: 6379,
+    db: 1,
+})
 
 const initialise_redis = async () => {
-    await redis_client.connect()
-    await redis_client_presence.connect()
-    await redis_expiration_listener.connect()
+    await redis_client_presence.config('SET', 'notify-keyspace-events', 'Ex')
+    await redis_expiration_listener.psubscribe('__keyevent@1__:expired')
 
-    await redis_client_presence.configSet('notify-keyspace-events', 'Ex')
-
-    await redis_expiration_listener.pSubscribe('__keyevent@1__:expired', async (key) => {
+    redis_expiration_listener.on('pmessage', async (pattern, channel, key) => {
         if (key.startsWith('agent:presence:')) {
             const agent_id = key.split(':')[2]
             redis_events.emit('agent_expired', agent_id)
         }
     })
+    
+    console.log('Redis initialized and Pub/Sub listening...')
 }
 
-export {redis_client, redis_client_presence, initialise_redis}
+export { redis_client, redis_client_presence, initialise_redis }
