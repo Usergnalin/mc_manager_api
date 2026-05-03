@@ -29,7 +29,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    server_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     module_controller.get_module_by_server_id({fields: ['module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata', 'revision']}),
     global_controller.send_data({data_path: 'module_data'}),
 )
@@ -63,7 +63,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    server_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     module_controller.stream_module_by_server_id({fields: ['module_id', 'module_name', 'module_type', 'module_enabled', 'module_metadata']}),
 )
 

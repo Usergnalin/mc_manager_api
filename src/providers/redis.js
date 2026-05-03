@@ -28,10 +28,8 @@ const initialise_redis = async () => {
         if (key.startsWith('agent:presence:')) {
             const agent_id = key.split(':')[2]
             redis_events.emit('agent_expired', agent_id)
-        }
+        }   
     })
-    
-    console.log('Redis initialized and Pub/Sub listening...')
 }
 
 export { redis_client, redis_client_presence, initialise_redis }

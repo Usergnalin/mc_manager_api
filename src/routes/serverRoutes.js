@@ -71,7 +71,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    server_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     server_controller.get_server_by_server_id({fields: ['server_name', 'properties', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
     global_controller.send_data({data_path: 'server_data'}),
 )
@@ -82,7 +82,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     server_controller.get_server_by_agent_id({fields: ['server_id', 'server_name', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
     global_controller.send_data({data_path: 'server_data'}),
 )
@@ -93,7 +93,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     server_controller.stream_server_by_agent_id({fields: ['server_id', 'server_name', 'server_status', 'server_thumbnail', 'revision', 'last_online']}),
 )
 
@@ -103,7 +103,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    server_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     server_controller.stream_server_by_server_id({fields: ['server_name', 'server_status', 'properties', 'server_thumbnail', 'revision', 'last_online']}),
 )
 
@@ -113,7 +113,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'server_id', data_path: 'server_id'}),
-    server_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    server_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     global_controller.load_query_data({field: 'logs_history_lines', data_path: 'logs_history_lines'}),
     log_controller.stream_logs_by_server_id(),
 )

@@ -28,7 +28,7 @@ router.post(
     rate_limiter.slow,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
-    team_controller.check_access_by_user_id_and_role({role: ['admin']}),
+    team_controller.check_access_by_user_id_and_role({role: ['operator', 'admin', 'owner']}),
     agent_controller.create_agent_linking_code(),
     global_controller.send_data({data_path: 'linking_code'}),
 )
@@ -50,7 +50,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
-    team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    team_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     agent_controller.get_agent_by_team_id({
         fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
     }),
@@ -63,7 +63,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'team_id', data_path: 'team_id'}),
-    team_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    team_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     agent_controller.stream_agent_by_team_id({
         fields: ['agent_id', 'agent_name', 'agent_status', 'updated_at', 'revision', 'last_online'],
     }),
@@ -85,7 +85,7 @@ router.delete(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'owner']}),
     agent_controller.delete_agent_by_agent_id(),
     global_controller.send_empty(),
 )
@@ -96,7 +96,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     global_controller.load_query_data({field: 'logs_history_lines', data_path: 'logs_history_lines'}),
     log_controller.stream_logs_by_agent_id(),
 )

@@ -9,7 +9,7 @@ export const insert_single = async (user_id, data) => {
         const slug = generate_slug()
         await connection.beginTransaction()
         await connection.execute(`INSERT INTO Team (team_id, team_name, slug) VALUES (UUID_TO_BIN(?), ?, ?)`, [team_id, data.team_name, slug])
-        await connection.execute(`INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`, [user_id, team_id, 'admin'])
+        await connection.execute(`INSERT INTO UserTeam (user_id, team_id, role) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`, [user_id, team_id, 'owner'])
         await connection.commit()
         return {team_id, slug}
     } catch (error) {

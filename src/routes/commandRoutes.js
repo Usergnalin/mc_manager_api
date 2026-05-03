@@ -14,7 +14,7 @@ router.post(
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
     global_controller.load_body_data({fields: ['command'], data_path: 'command_data'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['moderator', 'operator', 'admin', 'owner']}),
     command_controller.create_command(),
     global_controller.send_data({data_path: 'command_data'}),
 )
@@ -44,7 +44,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     command_controller.get_command_by_agent_id({
         fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
     }),
@@ -57,7 +57,7 @@ router.get(
     rate_limiter.normal,
     session_handler.verify_session_token(),
     global_controller.load_param_data({field: 'agent_id', data_path: 'agent_id'}),
-    agent_controller.check_access_by_user_id_and_role({role: ['admin', 'user']}),
+    agent_controller.check_access_by_user_id_and_role({role: ['viewer', 'moderator', 'operator', 'admin', 'owner']}),
     command_controller.stream_command_by_agent_id({
         fields: ['command_id', 'command', 'command_status', 'created_at', 'updated_at', 'command_feedback', 'revision'],
     }),

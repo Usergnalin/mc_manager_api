@@ -1,6 +1,7 @@
 import pool from '../providers/db.js'
 import {v7 as uuid} from 'uuid'
 import {generate_slug, generate_phrase, format_columns_select} from '../utils.js'
+import {LEGAL_COMPLIANCE_VERSION} from '../configs/constants.js'
 
 export const insert_single = async (data) => {
     const connection = await pool.getConnection()
@@ -24,7 +25,7 @@ export const insert_single = async (data) => {
         await connection.query(
             `INSERT INTO UserTeam (user_id, team_id, role)
             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
-            [user_id, team_id, 'admin'],
+            [user_id, team_id, 'owner'],
         )
         await connection.commit()
         return {user_id, team_id, slug}
@@ -59,7 +60,7 @@ export const insert_single_with_identity = async (provider, provider_user_id) =>
         await connection.query(
             `INSERT INTO UserTeam (user_id, team_id, role)
             VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
-            [user_id, team_id, 'admin'],
+            [user_id, team_id, 'owner'],
         )
         await connection.query(
             `INSERT INTO Identity (identity_id, user_id, provider_user_id, provider)
@@ -120,6 +121,16 @@ export const select_by_username = async (username, columns) => {
     return rows[0]
 }
 
+export const select_by_user_id = async (user_id, columns) => {
+    const [rows] = await pool.query(`
+        SELECT ${format_columns_select(columns)}
+        FROM User
+        WHERE user_id = UUID_TO_BIN(?)`,
+        [user_id],
+    )
+    return rows[0]
+}
+
 export const update_by_user_id = async (user_id, data, columns) => {
     const fields = []
     const values = []
@@ -134,4 +145,13 @@ export const update_by_user_id = async (user_id, data, columns) => {
     `
     values.push(user_id)
     return await pool.query(statement, values)
+}
+
+export const update_legal_compliance_by_user_id = async (user_id) => {
+    const statement = `
+        UPDATE User
+        SET accepted_legal_compliance_version = ?, legal_compliance_accepted_at = CURRENT_TIMESTAMP(6), revision = revision + 1
+        WHERE user_id = UUID_TO_BIN(?)
+    `
+    return await pool.query(statement, [LEGAL_COMPLIANCE_VERSION, user_id])
 }

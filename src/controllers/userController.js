@@ -73,3 +73,21 @@ export const update_user_by_user_id = ({fields, user_id_path = 'user_id', user_d
         }
     }
 }
+
+export const update_user_legal_compliance_by_user_id = ({user_id_path = 'user_id'} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const user_id = get_path(res, user_id_path)
+            const results = await user_model.update_legal_compliance_by_user_id(user_id)
+            if (results.affectedRows === 0) {
+                return res.status(404).json({message: 'User not found'})
+            }
+            next()
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                return res.status(409).json({message: 'Username already exists'})
+            }
+            next(error)
+        }
+    }
+}

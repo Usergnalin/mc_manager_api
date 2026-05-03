@@ -8,19 +8,21 @@ export const SERVER_COLUMNS = ['server_id', 'agent_id', 'server_name', 'server_t
 export const COMMAND_STATUS = ['pending', 'queued', 'sent', 'success', 'failure']
 export const SERVER_STATUS = ['online', 'offline', 'starting', 'stopping']
 export const AGENT_STATUS = ['online', 'offline']
-export const TEAM_ROLES = ['user', 'admin']
+    export const TEAM_ROLES = ['viewer', 'moderator', 'operator', 'admin', 'owner']
 export const MODULE_TYPES = ['mod', 'resource_pack', 'data_pack', 'plugin']
 
 // --- Security ---
 
 // User refresh token duration before needing login
-export const USER_REFRESH_TOKEN_DURATION = '30d'
+export const USER_REFRESH_TOKEN_DURATION = '7d'
 // Period of time before a refresh token reuse would not trigger a breach event
 export const USER_REFRESH_TOKEN_GRACE_PERIOD = '30s'
 // User session token duration before needing to refresh token
-export const USER_TOKEN_DURATION = '60m' //default: 60m
+export const USER_TOKEN_DURATION = '60m' // default: 60m
 // Agent session token before requiring agent signature
 export const AGENT_TOKEN_DURATION = '120m'
+// User token duration for partial logins before user cannot continue login
+export const USER_PARTIAL_LOGIN_TOKEN_DURATION = '15m'
 // JWT token signing algorithm for session and refresh tokens
 export const TOKEN_ALGORITHM = 'HS256'
 // Number of salt rounds for hashing passwords, increases time to hash
@@ -60,6 +62,8 @@ export const NONCE_MAX_DURATION = '1m'
 export const JSON_MAX_BODY_SIZE = '10mb'
 // Interval of scraping of new mc and loader versions
 export const LOADER_UPDATE_INTERVAL = '6h'
+// Current legal compliance version
+export const LEGAL_COMPLIANCE_VERSION = 1
 
 export const CONSTANTS = {
     COMMAND_STATUS,

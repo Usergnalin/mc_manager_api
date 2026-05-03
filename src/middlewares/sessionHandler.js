@@ -139,6 +139,37 @@ export const verify_session_token = ({output_user_id_path = 'user_id', output_se
     }
 }
 
+export const verify_partial_login_token = ({output_user_id_path = 'user_id'} = {}) => {
+    return async (req, res, next) => {
+        try {
+            const partial_login_token = req.cookies.partial_login_token
+            if (partial_login_token === undefined) {
+                return res.status(401).json({message: 'No partial login token provided'})
+            }
+            let decoded
+            try {
+                decoded = jwt.verify(partial_login_token, token_secret)
+            } catch (error) {
+                if (error.name === 'TokenExpiredError') {
+                    return res.status(401).json({message: 'Partial login token expired'})
+                }
+                return res.status(401).json({message: 'Invalid partial login token'})
+            }
+            res.clearCookie('partial_login_token', {
+                domain: `.${process.env.DOMAIN}`,
+                path: '/auth',
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+            })
+            set_path(res, output_user_id_path, decoded.user_id)
+            next()
+        } catch (error) {
+            next(error)
+        }
+    }
+}
+
 export const generate_session_token = ({user_id_path = 'user_id', session_id_path = 'session_id'} = {}) => {
     return async (req, res, next) => {
         try {

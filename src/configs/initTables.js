@@ -21,6 +21,8 @@ CREATE TABLE User (
     user_id BINARY(16) PRIMARY KEY,
     username VARCHAR(63) NOT NULL UNIQUE,
     password VARCHAR(63) NULL,
+    accepted_legal_compliance_version INT UNSIGNED NOT NULL DEFAULT 0,
+    legal_compliance_accepted_at TIMESTAMP(6) NULL,
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     revision BIGINT UNSIGNED NOT NULL DEFAULT 0
@@ -63,7 +65,7 @@ CREATE TABLE Team (
 CREATE TABLE UserTeam (
     user_id BINARY(16) NOT NULL,
     team_id BINARY(16) NOT NULL,
-    role ENUM(${TEAM_ROLES.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'user',
+    role ENUM(${TEAM_ROLES.map((r) => `'${r}'`).join(',')}) NOT NULL DEFAULT 'viewer',
     created_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     revision BIGINT UNSIGNED NOT NULL DEFAULT 0,
