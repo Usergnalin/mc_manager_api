@@ -75,7 +75,7 @@ export const get_agent_by_agent_id = ({fields, agent_id_path = 'agent_id', outpu
         try {
             const agent_id = get_path(res, agent_id_path)
             const results = await agent_model.select_by_agent_id(agent_id, fields)
-            if (results.length === 0) {
+            if (results === undefined) {
                 return res.status(404).json({message: 'Agent not found'})
             }
             set_path(res, output_agent_data_path, results)
